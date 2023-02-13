@@ -1,11 +1,4 @@
-import { Mongoose, connect } from 'mongoose'
-
-declare global {
-  var mongoose: {
-    promise: Promise<Mongoose> | null
-    conn: Mongoose | null
-  }
-}
+import { connect } from 'mongoose'
 
 let cached = global.mongoose
 
@@ -23,15 +16,13 @@ async function dbConnect () {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       bufferCommands: false,
-      bufferMaxEntries: 0,
-      useFindAndModify: true,
-      useCreateIndex: true
     }
 
     cached.promise = connect(<string>process.env.MONGODB_URI, opts).then(mongoose => mongoose)
   }
 
   cached.conn = await cached.promise
+  console.log('db connected');
   return cached.conn
 }
 

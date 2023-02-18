@@ -11,7 +11,15 @@
 }
 
 :root {
-    --color-bg: #FAF9F6
+    --color-bg: #FAF9F6;
+    /* --orange_gradient: repeating-linear-gradient(to right, #974100, #e3cb81);
+    --grey_gradient: repeating-linear-gradient(#73777B, #383838); */
+    --purple: #060b26;
+    --white_text: #f5f5f5;
+    /* --orange_button_bg: #f89400; */
+    --blue-button-bg: #1a83ff;
+    --placeholder-col: #706f6f !important;
+    --slimselect-border: 1px solid #dcdee2;
 }
 
 html {

@@ -1,11 +1,8 @@
-import { useRouter } from "next/router"
-import Collapse from "../../src/Components/Collapse"
-import Login from "../../src/Components/Login"
-import SignUp from "../../src/Components/SignUp"
+import Collapse from "../../lib/Components/Collapse"
+import Login from "../../lib/Components/Login"
+import SignUp from "../../lib/Components/SignUp"
 
-const index = () => {
-    // const router = useRouter()
-    // const user_id = localStorage.getItem('user_id')
+export default function Auth() {
     const authForm = [
         {
             title: 'Login',
@@ -16,9 +13,6 @@ const index = () => {
             content: <SignUp />
         }
     ]
-    // if (user_id) return router.replace('/calendar')
 
-    return <Collapse data={ authForm } fullscreen={ true } />
+    return <Collapse data={ authForm } fullscreen />
 }
-
-export default index

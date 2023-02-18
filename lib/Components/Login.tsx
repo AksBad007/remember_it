@@ -1,11 +1,31 @@
+import { useRouter } from 'next/router'
+import { useCookies } from 'react-cookie'
+import { toast } from 'react-toastify'
+import { postData, _handleSubmit } from '../Helpers/frontCommon'
 import styles from '../../styles/Login.module.css'
-import { _handleSubmit } from '../Helpers/frontCommon'
 
 export default function Login() {
-  const login = (e: React.FormEvent<HTMLFormElement>) => {
-    _handleSubmit(e, '/api/auth?mode=login')
-      .then(res => console.log(res))
-      .catch(err => console.log(err))
+  const router = useRouter()
+  const [_cookie, setCookie] = useCookies(['auth_token'])
+  const _loginURL = 'auth?' + new URLSearchParams({ mode: 'login' })
+
+  const login = async (e: React.FormEvent<HTMLFormElement>) => {
+    const userData = _handleSubmit(e)
+
+    try {
+      let res = await postData(_loginURL, userData)
+
+      res = res.data
+      toast.success(res.msg)
+      setCookie('auth_token', res.data, { path: '/' })
+
+      if (userData.remember)
+        localStorage.setItem('auth_token', res.data)
+
+      router.replace('/calendar')
+    } catch (error: any) {
+      toast.error(error.message)
+    }
   }
 
   return (

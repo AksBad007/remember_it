@@ -1,6 +1,6 @@
-import Collapse from "../../lib/Components/Collapse"
-import Login from "../../lib/Components/Login"
-import SignUp from "../../lib/Components/SignUp"
+import Collapse from '../lib/Components/Collapse'
+import Login from '../lib/Components/Login'
+import SignUp from '../lib/Components/SignUp'
 
 export default function Auth() {
     const authForm = [

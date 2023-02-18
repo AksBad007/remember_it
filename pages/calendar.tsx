@@ -1,7 +1,16 @@
+import dynamic from 'next/dynamic'
+import styles from '../styles/CalendarPage.module.css'
+
+const CalendarComponent = dynamic(
+  () => import('../lib/Components/Calendar'),
+  { loading: () => <p>Loading ...</p>, ssr: false }
+)
+
 export default function Calendar({ data }: any) {
+    console.log(data);
     return (
-        <div>
-            Calendar
+        <div id={ styles['main-calendar-div'] }>
+            <CalendarComponent />
         </div>
     )
 }
@@ -13,7 +22,6 @@ export async function getServerSideProps(context: any) {
         }
     })
     let data = await req.json()
-    console.log(data);
 
     return { props: { data } }
 }

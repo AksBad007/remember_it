@@ -1,13 +1,16 @@
+import { GetServerSideProps } from 'next'
 import dynamic from 'next/dynamic'
+import Loader from '../lib/Components/Loader'
+import { getUserInfo } from '../lib/Helpers/db_helpers'
+import dbConnect from '../lib/Helpers/db_helpers'
 import styles from '../styles/CalendarPage.module.css'
 
 const CalendarComponent = dynamic(
-  () => import('../lib/Components/Calendar'),
-  { loading: () => <p>Loading ...</p>, ssr: false }
+  () => import('../lib/Components/CalendarComponent'),
+  { loading: () => <Loader />, ssr: false }
 )
 
-export default function Calendar({ data }: any) {
-    console.log(data);
+export default function Calendar({ user }: any) {
     return (
         <div id={ styles['main-calendar-div'] }>
             <CalendarComponent />
@@ -15,13 +18,23 @@ export default function Calendar({ data }: any) {
     )
 }
 
-export async function getServerSideProps(context: any) {
-    let req = await fetch('http://localhost:3000/api/auth', {
-        headers: {
-            Cookie: context.req.headers.cookie
-        }
-    })
-    let data = await req.json()
+export const getServerSideProps: GetServerSideProps = async (context) => {
+    try {
+        let user = await getUserInfo(context.req)
 
-    return { props: { data } }
+        return {
+            props: {
+                user: JSON.parse(JSON.stringify(user))
+            }
+        }
+    } catch (error) {
+        console.error(error)
+
+        return {
+            redirect: {
+                permanent: false,
+                destination: '/logout'
+            }
+        }
+    }
 }

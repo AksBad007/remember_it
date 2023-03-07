@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Joi from 'joi'
 import { hash, compare } from 'bcrypt'
-import { raiseNotFound, raiseError, raiseSuccess, signClaim } from '../../lib/Helpers/backCommon'
-import dbConnect from '../../lib/Helpers/dbConnect'
+import { raiseNotFound, raiseError, raiseSuccess, signClaim } from '../../lib/Helpers/backend_helpers'
+import dbConnect from '../../lib/Helpers/db_helpers'
 import User from '../../lib/Models/User.model'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

@@ -1,4 +1,6 @@
 import { connect, set } from 'mongoose'
+import { decodeAuth } from './backend_helpers'
+import User from '../Models/User.model'
 
 let cached = global.mongoose
 
@@ -30,4 +32,16 @@ export default async function dbConnect() {
     console.error('DB connection failed.')
     console.error(error)
   }
+}
+
+// DB Methods outside APIs
+export const getUserInfo = async (req: any) => {
+  await dbConnect()
+  const userID = await decodeAuth(req.cookies.auth_token)
+  const data = await User.findById(userID, '_id username')
+
+  if (data)
+    return data
+
+  throw new Error('User Not Found')
 }

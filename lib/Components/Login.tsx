@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { useCookies } from 'react-cookie'
 import { toast } from 'react-toastify'
-import { postData, _handleSubmit } from '../Helpers/frontCommon'
+import { postData, _handleSubmit } from '../Helpers/frontend_helpers'
 import styles from '../../styles/Login.module.css'
 
 export default function Login() {

@@ -2,8 +2,9 @@ import { LegacyRef, useRef, useState, useEffect } from 'react'
 import Calendar from '@toast-ui/react-calendar'
 import '@toast-ui/calendar/dist/toastui-calendar.min.css'
 
-export default function CalendarPage() {
+export default function CalendarComponent() {
     const currentRef = useRef() as LegacyRef<Calendar>
+    const formatdate = (date: string) => new Date(date).toLocaleString('en', { year: "numeric", month: "long", day: "2-digit", hour: "2-digit", minute: "2-digit" })
 
     return (
         <Calendar
@@ -21,7 +22,7 @@ export default function CalendarPage() {
                 popupDetailBody: schedule => 'desc: ' + schedule.body,
                 popupEdit: () => 'Edit',
                 popupDelete: () => 'Delete',
-                popupDetailDate: ({ allDay, start, end }) => (
+                popupDetailDate: ({ _allDay, start, end }) => (
                     'Start: ' + new Date(start).toLocaleString('en', { year: "numeric", month: "long", day: "2-digit", hour: "2-digit", minute: "2-digit" }) +
                     '<br>End: ' + new Date(end).toLocaleString('en', { year: "numeric", month: "long", day: "2-digit", hour: "2-digit", minute: "2-digit" }))
             }}

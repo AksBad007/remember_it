@@ -1,8 +1,6 @@
 import type { NextApiResponse } from 'next'
 import { SignJWT, jwtVerify } from 'jose'
 import { Mongoose } from "mongoose"
-// import dbConnect from './dbConnect'
-// import User from '../Models/User.model'
 
 declare global {
   var mongoose: {

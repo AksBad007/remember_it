@@ -1,0 +1,69 @@
+.modal-background {
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(200, 200, 200, 0.53);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.5s ease;
+}
+
+.modal-background.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+.modal-container {
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: rgba(0, 0, 0) 0px 5px 15px;
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+}
+
+.modal-container .modal-title {
+    display: inline-block;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.modal-title button {
+    float: right;
+    background-color: transparent;
+    border: none;
+    font-size: 25px;
+    cursor: pointer;
+    background-color: #e3cb81;
+    padding: 0 1rem;
+    border-radius: 4px;
+}
+
+.modal-container .modal-footer {
+    flex: 20%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-body button {
+    border: 0;
+    background-color: #e3cb81;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.modal-body button:hover, .modal-title button:hover {
+    background-color: var(--orange_button_bg);
+}
+
+.modal-body input[type="checkbox"] {
+    cursor: pointer;
+}

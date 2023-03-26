@@ -3,7 +3,6 @@ import dynamic from 'next/dynamic'
 import Loader from '../lib/Components/Loader'
 import { getUserInfo } from '../lib/Helpers/db_helpers'
 import dbConnect from '../lib/Helpers/db_helpers'
-import styles from '../styles/CalendarPage.module.css'
 
 const CalendarComponent = dynamic(
   () => import('../lib/Components/CalendarComponent'),
@@ -11,11 +10,9 @@ const CalendarComponent = dynamic(
 )
 
 export default function Calendar({ user }: any) {
-    return (
-        <div id={ styles['main-calendar-div'] }>
-            <CalendarComponent />
-        </div>
-    )
+    console.log(user)
+
+    return <CalendarComponent />
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {

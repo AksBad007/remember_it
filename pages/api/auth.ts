@@ -1,14 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Joi from 'joi'
-import { hash, compare } from 'bcrypt'
+import { compare } from 'bcrypt'
 import { raiseNotFound, raiseError, raiseSuccess, signClaim } from '../../lib/Helpers/backend_helpers'
-import dbConnect from '../../lib/Helpers/db_helpers'
-import User from '../../lib/Models/User.model'
+import dbConnect, { getUserInfo } from '../../lib/Helpers/db_helpers'
+import Users from '../../lib/Models/User.model'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     await dbConnect()
-    const { method, query, body, headers } = req
-    const userId = headers.userid
+    const { method, query, body, headers: { userID } } = req
 
     switch (method) {
         case 'POST':
@@ -23,8 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                     try {
                         const newUser = await registerSchema.validateAsync(body)
-                        newUser.password = await hash(newUser.password, 12)
-                        const result = await new User(newUser).save()
+                        const result = await new Users(newUser).save()
                         const token = await signClaim(result._id)
 
                         return raiseSuccess(res, { msg: 'Registration Succesful.', data: token })
@@ -52,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                     try {
                         const existingUser = await loginSchema.validateAsync(body)
-                        const result = await User.findOne({ email: existingUser.email })
+                        const result = await Users.findOne({ email: existingUser.email })
 
                         if (result) {
                             if (await compare(existingUser.password, result.password)) {
@@ -81,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         case 'DELETE':
             try {
-                await User.deleteOne({ _id: userId })
+                await Users.deleteOne({ _id: userID })
                 return raiseSuccess(res, { msg: 'User Successfully Removed.', data: null })
             } catch (error) {
                 console.error(error)
@@ -91,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         case 'GET':
             try {
-                const result = await User.findById(userId)
+                const result = await getUserInfo(req)
 
                 if (result)
                     return raiseSuccess(res, { msg: 'User Found.', data: result })

@@ -4,16 +4,20 @@ import { toast } from 'react-toastify'
 import { postData, _handleSubmit } from '../Helpers/frontend_helpers'
 import styles from '../../styles/Login.module.css'
 
-export default function Login() {
+interface LoginProps {
+  login?: boolean
+}
+
+export default function Login({ login=false }: LoginProps) {
   const router = useRouter()
   const [_cookie, setCookie] = useCookies(['auth_token'])
-  const _loginURL = 'auth?' + new URLSearchParams({ mode: 'login' })
+  const _authUrl = 'auth?' + new URLSearchParams({ mode: login ? 'login' : 'register' })
 
-  const login = async (e: React.FormEvent<HTMLFormElement>) => {
+  const authenticate = async (e: React.FormEvent<HTMLFormElement>) => {
     const userData = _handleSubmit(e)
 
     try {
-      let res = await postData(_loginURL, userData)
+      let res = await postData(_authUrl, userData)
 
       res = res.data
       toast.success(res.msg)
@@ -29,22 +33,30 @@ export default function Login() {
   }
 
   return (
-    <form className={`d-flex flex-column ${styles['sign-form']}`} onSubmit={ login }>
-      <div className="form-floating mb-3">
-        <input name='email' type="email" className="form-control shadow-none" id="floatingInput" placeholder="name@example.com" />
-        <label htmlFor="floatingInput">Email address</label>
+    <form className={`d-flex flex-column ${styles['sign-form']}`} onSubmit={authenticate}>
+      {
+        !login &&
+        <div className='form-floating mb-3'>
+          <input name='username' type='text' className='form-control shadow-none' id='floatingInput' placeholder='Username' />
+          <label htmlFor='floatingInput'>Username</label>
+        </div>
+      }
+      <div className='form-floating mb-3'>
+        <input name='email' type='email' className='form-control shadow-none' id='floatingEmail' placeholder='name@example.com' />
+        <label htmlFor='floatingEmail'>Email address</label>
       </div>
-      <div className="form-floating mb-3">
-        <input name='password' type="password" className="form-control shadow-none" id="floatingPassword" placeholder="Password" />
-        <label htmlFor="floatingPassword">Password</label>
+      <div className='form-floating mb-3'>
+        <input name='password' type='password' className='form-control shadow-none' id='floatingPassword' placeholder='Password' />
+        <label htmlFor='floatingPassword'>Password</label>
       </div>
-      <div className="form-check mb-3">
-        <input name='remember' className="form-check-input shadow-none" type="checkbox" id="remember" />
-        <label className="form-check-label" htmlFor="remember">
-          Remember Me
+      <div className='form-check mb-3'>
+        <label className='form-check-label cursor' htmlFor='remember'>
+          <input name='remember' className='form-check-input shadow-none' type='checkbox' id='remember' /> Remember Me
         </label>
       </div>
-      <button type='submit' className={`btn btn-primary ${styles['sign-btn']}`}>Login</button>
+      <button type='submit' className={`btn btn-primary ${styles['sign-btn']}`}>
+        { login ? 'Login' : 'Sign Up' }
+      </button>
     </form>
   )
 }

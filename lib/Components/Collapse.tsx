@@ -2,12 +2,12 @@ import { useState } from "react"
 import styles from '../../styles/Collapse.module.css'
 
 interface CollapseItem {
-    title: string,
+    title: string
     content: JSX.Element
 }
 
 interface CollapseProps {
-    data: CollapseItem[],
+    data: CollapseItem[]
     fullscreen: boolean
 }
 

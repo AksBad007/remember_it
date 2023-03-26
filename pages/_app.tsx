@@ -1,13 +1,14 @@
 import type { AppProps } from 'next/app'
 import Head from "next/head"
 import { useRouter } from "next/router"
+import { useEffect } from 'react'
 import { CookiesProvider, useCookies } from 'react-cookie'
 import { ToastContainer } from 'react-toastify'
 import NavBar from "../lib/Components/NavBar"
 import 'react-toastify/dist/ReactToastify.css'
 import 'bootstrap/dist/css/bootstrap.css'
+import '../styles/slimselect.min.css'
 import '../styles/globals.css'
-import { useEffect } from 'react'
 
 export default function App({ Component, pageProps }: AppProps) {
   const currentPath = useRouter().pathname

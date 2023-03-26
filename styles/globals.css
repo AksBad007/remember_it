@@ -17,7 +17,7 @@
     /* --purple: #060b26; */
     --purple: #3F497F;
     --white_text: #f5f5f5;
-    /* --orange_button_bg: #f89400; */
+    --orange_button_bg: #f89400;
     --blue-button-bg: #1a83ff;
     --placeholder-col: #706f6f !important;
     --slimselect-border: 1px solid #dcdee2;
@@ -30,6 +30,14 @@ html {
 body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.7;
+}
+
+.cursor {
+    cursor: pointer;
+}
+
+.form-floating > label {
+    color: var(--placeholder-col);
 }
 
 /* TABLET STYLES */

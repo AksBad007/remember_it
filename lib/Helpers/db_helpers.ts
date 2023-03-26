@@ -1,6 +1,6 @@
 import { connect, set } from 'mongoose'
 import { decodeAuth } from './backend_helpers'
-import User from '../Models/User.model'
+import Users from '../Models/User.model'
 
 let cached = global.mongoose
 
@@ -8,10 +8,14 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null }
 }
 
+interface QueryFilter {
+  [key: string]: any
+}
+
+
 export default async function dbConnect() {
-  if (cached.conn) {
+  if (cached.conn)
     return cached.conn
-  }
 
   if (!cached.promise) {
     const opts = {
@@ -38,10 +42,29 @@ export default async function dbConnect() {
 export const getUserInfo = async (req: any) => {
   await dbConnect()
   const userID = await decodeAuth(req.cookies.auth_token)
-  const data = await User.findById(userID, '_id username')
+  const data = await Users.findById(userID)
 
   if (data)
     return data
 
   throw new Error('User Not Found')
+}
+
+export const searchUsers = async (query: string | string[], userID?: any) => {
+  await dbConnect()
+  const filter: QueryFilter = { $or: [ { email: query }, { username: query } ]}
+
+  if (userID) {
+    const { friends_added, friends_recieved, friends_sent } = await getUserInfo(userID)
+
+    filter._id = {
+      $in: [
+          ...friends_added,
+          ...friends_recieved,
+          ...friends_sent
+      ]
+    }
+  }
+
+  return await Users.find(filter).limit(5)
 }

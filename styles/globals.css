@@ -32,12 +32,20 @@ body {
     line-height: 1.7;
 }
 
-.cursor {
+.cursor-pointer {
     cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
 }
 
 .form-floating > label {
     color: var(--placeholder-col);
+}
+
+.tui-full-calendar-popup-detail .tui-full-calendar-section-header {
+    margin-bottom: 20px !important;
 }
 
 /* TABLET STYLES */

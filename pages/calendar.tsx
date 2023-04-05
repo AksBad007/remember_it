@@ -2,7 +2,6 @@ import { GetServerSideProps } from 'next'
 import dynamic from 'next/dynamic'
 import Loader from '../lib/Components/Loader'
 import { getUserInfo } from '../lib/Helpers/db_helpers'
-import dbConnect from '../lib/Helpers/db_helpers'
 
 const CalendarComponent = dynamic(
   () => import('../lib/Components/CalendarComponent'),
@@ -10,9 +9,7 @@ const CalendarComponent = dynamic(
 )
 
 export default function Calendar({ user }: any) {
-    console.log(user)
-
-    return <CalendarComponent />
+    return <CalendarComponent userInfo={ user } />
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {

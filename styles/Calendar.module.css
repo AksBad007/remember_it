@@ -1,8 +1,6 @@
 #calendar-controls {
     margin-left: 2rem;
     display: flex;
-    /* grid-template-columns: 1fr 1fr 3fr; */
-    /* width: 30rem; */
     gap: 20px;
     align-items: baseline;
     padding: 1rem;
@@ -82,17 +80,6 @@
     gap: 2rem;
 }
 
-.evt-dates {
-    width: 100%;
-}
-
-.evt-dates input {
-    height: 2rem;
-    border: var(--slimselect-border);
-    border-radius: 4px;
-    padding: 1rem 0.5rem;
-}
-
 .calendar-btns {
     height: 79vh;
     padding: 10px;
@@ -105,18 +92,34 @@
     border-radius: 4px;
 }
 
-.tui-full-calendar-popup-detail .tui-full-calendar-section-header {
-    margin-bottom: 20px;
+.evt-dates {
+    width: 100%;
+    display: flex;
 }
 
-.evt-dates ::placeholder {
+.evt-dates .evt-cust-labels {
+    display: flex;
+    width: 7rem;
+    align-items: center;
+    border: var(--slimselect-border);
+    border-radius: 4px;
+    border-right: 0;
+}
+
+.evt-dates .evt-cust-labels span {
+    white-space: nowrap;
     color: var(--placeholder-col);
+    margin-left: .5rem;
 }
 
-.evt-dates :-ms-input-placeholder{
-    color: var(--placeholder-col);
+.evt-dates input {
+    height: 2rem;
+    border: var(--slimselect-border);
+    border-radius: 4px;
+    border-left: 0;
+    padding: 1rem 0.5rem;
 }
 
-.evt-dates ::-ms-input-placeholder {
+.evt-dates ::placeholder, .evt-dates :-ms-input-placeholder, .evt-dates ::-ms-input-placeholder {
     color: var(--placeholder-col);
 }

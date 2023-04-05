@@ -18,8 +18,8 @@ export default function Login({ login=false }: LoginProps) {
 
     try {
       let res = await postData(_authUrl, userData)
-
       res = res.data
+
       toast.success(res.msg)
       setCookie('auth_token', res.data, { path: '/' })
 
@@ -50,7 +50,7 @@ export default function Login({ login=false }: LoginProps) {
         <label htmlFor='floatingPassword'>Password</label>
       </div>
       <div className='form-check mb-3'>
-        <label className='form-check-label cursor' htmlFor='remember'>
+        <label className='form-check-label cursor-pointer' htmlFor='remember'>
           <input name='remember' className='form-check-input shadow-none' type='checkbox' id='remember' /> Remember Me
         </label>
       </div>

@@ -1,13 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Joi from 'joi'
 import { compare } from 'bcrypt'
-import { raiseNotFound, raiseError, raiseSuccess, signClaim } from '../../lib/Helpers/backend_helpers'
+import { raiseNotFound, raiseError, raiseSuccess, signClaim, raiseUnauthorized } from '../../lib/Helpers/backend_helpers'
 import dbConnect, { getUserInfo } from '../../lib/Helpers/db_helpers'
 import Users from '../../lib/Models/User.model'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     await dbConnect()
-    const { method, query, body, headers: { userID } } = req
+    const { method, query, body, headers } = req
+    const userID = headers.userid
 
     switch (method) {
         case 'POST':
@@ -97,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             } catch (error) {
                 console.error(error)
 
-                return raiseNotFound(res, 'Invalid Authorization Token')
+                return raiseUnauthorized(res, 'Invalid Authorization Token')
             }
 
         default:

@@ -1,5 +1,5 @@
-import { hash } from 'bcrypt'
 import { models, model, Schema } from 'mongoose'
+import { hash } from 'bcrypt'
 
 const FriendSchema = new Schema({
   userID: { type: Schema.Types.ObjectId, required: true },
@@ -14,7 +14,7 @@ const UserSchema: Schema = new Schema({
   friends_added: [FriendSchema],
   friends_recieved: [FriendSchema],
   friends_sent: [FriendSchema]
-});
+})
 
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password'))

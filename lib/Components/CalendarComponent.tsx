@@ -6,7 +6,7 @@ import SlimSelect from 'slim-select'
 import DatePicker from 'react-datepicker'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import Modal from './Modal'
-import { _handleSubmit, postData, request } from '../Helpers/frontend_helpers'
+import { _handleSubmit, post_or_put_data, request } from '../Helpers/frontend_helpers'
 import 'tui-calendar/dist/tui-calendar.css'
 import 'react-datepicker/dist/react-datepicker.css'
 import styles from '../../styles/Calendar.module.css'
@@ -20,7 +20,7 @@ interface CalendarCreationModalProps {
 }
 
 interface InvitedUser {
-    userID: string
+    userID: string | any
     username: string
     email: string
     status: string
@@ -36,15 +36,6 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
     const genInstance = () => calendarRef.current.getInstance()
 
     const formatdate = (date: any) => new Date(date).toLocaleString('en', { year: 'numeric', month: 'long', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-
-    const getEvents = () => {
-        const calendar = genInstance()
-        const start = calendar.getDateRangeStart()._date
-        const end = calendar.getDateRangeEnd()._date
-
-        calendar.clear()
-        rangeChange()
-    }
 
     const rangeChange = () => {
         const calendar = genInstance()
@@ -67,26 +58,82 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
         }
     }
 
+    const createSchedule = (evt: any) => {
+        console.log('evt =', evt)
+        let newEvent: ISchedule = {
+            calendarId: '1',
+            category: 'time',
+            id: evt._id,
+            title: evt.title,
+            body: evt.description,
+            start: evt.start_date,
+            end: evt.end_date,
+            location: evt.location.description,
+            dueDateClass: evt.created_by.userID.username,
+            attendees: evt.invited_users.map((user: InvitedUser) => user.userID.username),
+            isReadOnly: !(userInfo._id === evt.created_by.userID._id)
+        }
+
+        switch (evt.repeat_status) {
+            case 1:
+                newEvent.recurrenceRule = 'Every Day'
+                break
+            case 2:
+                newEvent.recurrenceRule = 'Every Week'
+                break
+            case 3:
+                newEvent.recurrenceRule = 'Every Month'
+                break
+            case 4:
+                newEvent.recurrenceRule = 'Every Year'
+                break
+            default:
+                newEvent.recurrenceRule = 'None'
+                break
+        }
+
+        return newEvent
+    }
+
+    const getEvents = async () => {
+        const calendar = genInstance()
+        const start: Date = calendar.getDateRangeStart()._date
+        const end: Date = calendar.getDateRangeEnd()._date
+
+        calendar.clear()
+        rangeChange()
+
+        try {
+            const eventRes = await request(`events/paginated/${ start.getFullYear() }/${ start.getMonth() }/${ end.getMonth() }/${ start.getDate() }/${ end.getDate() }`)
+            const { allEvents, totalEvents } = eventRes.data.data
+            let schedules: ISchedule[] = []
+
+            if (totalEvents)
+                schedules = allEvents.map((evt: any) => createSchedule(evt))
+
+                calendar.createSchedules(schedules)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
     const changeView = (calendarView: string) => {
         genInstance().changeView(calendarView, true)
         rangeChange()
     }
 
     const next = () => {
-      const calendar = genInstance()
-      calendar.next()
+      genInstance().next()
       getEvents()
     }
 
     const prev = () => {
-        const calendar = genInstance()
-        calendar.prev()
+        genInstance().prev()
         getEvents()
     }
 
     const getToday = () => {
-        const calendar = genInstance()
-        calendar.today()
+        genInstance().today()
         getEvents()
     }
 
@@ -106,68 +153,25 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
         const createEvtBody = (body: { [k: string]: FormDataEntryValue }) => {
             let newEvt: any = { ...body }
 
-            if (!newEvt.invited_users)
-                newEvt.invited_users = []
-            else
-                newEvt.invited_users = newEvt.invited_users.map((userID: string) => ({ userID: userID}))
-
+            newEvt.invited_users = !newEvt.invited_users ? [] : newEvt.invited_users.map((userID: string) => ({ userID: userID}))
             newEvt.location = {
                 description: newEvt.location_description,
                 link: location === 'Online' ? newEvt.location_link : ''
             }
+            newEvt.reminder_status = newEvt.notify > -1
 
             delete newEvt.location_description
             delete newEvt.location_link
-
-            if (newEvt.notify < 0)
-                newEvt.reminder_status = false
-            else
-                newEvt.reminder_status = true
 
             return newEvt
         }
 
         const createNewEvent = async (e: React.FormEvent<HTMLFormElement>) => {
             try {
-                let res = await postData('events', createEvtBody(_handleSubmit(e)))
+                let res = await post_or_put_data('events', createEvtBody(_handleSubmit(e)))
                 const { data, msg } = res.data
 
-                let schedule: ISchedule = {
-                    calendarId: '1',
-                    category: 'time',
-                    id: data._id,
-                    title: data.title,
-                    body: data.description,
-                    start: data.start_date,
-                    end: data.end_date,
-                    location: data.location.location_description,
-                    dueDateClass: userInfo.username,
-                    attendees: [],
-                    isReadOnly: !(userInfo._id === data.created_by.userID)
-                }
-
-                data.invited_users.forEach((user: InvitedUser) => schedule.attendees?.push(user.username))
-
-                switch (data.repeat_status) {
-                    case 1:
-                        schedule.recurrenceRule = 'Every Day'
-                        break
-                    case 2:
-                        schedule.recurrenceRule = 'Every Week'
-                        break
-                    case 3:
-                        schedule.recurrenceRule = 'Every Month'
-                        break
-                    case 4:
-                        schedule.recurrenceRule = 'Every Year'
-                        break
-                    default:
-                        schedule.recurrenceRule = 'None'
-                        break
-                }
-
-                calendarInstance.createSchedules([schedule])
-
+                calendarInstance.createSchedules([createSchedule(data)])
                 toast.success(msg)
                 hideModal()
             } catch (error: any) {
@@ -175,11 +179,17 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
             }
         }
 
-        const updateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
-            const body = createEvtBody(_handleSubmit(e))
-            console.log(body)
+        const updateEvent = async (e: React.FormEvent<HTMLFormElement>) => {            
+            try {
+                const res = await post_or_put_data('events', createEvtBody(_handleSubmit(e)), false)
+                const { data, msg } = res.data
 
-            // if (!body.invited_users)
+                calendarInstance.updateSchedule(data._id, '1', createSchedule(data), false)
+                toast.success(msg)
+                hideModal()
+            } catch (error: any) {
+                toast.error(error.message)
+            }
         }
 
         const hideModal = () => {
@@ -201,6 +211,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
             setShow(true)
 
+            // Destroy all SlimSelects on Closing Modal
             return () => evtSelects.forEach(select => select.destroy())
         }, [])
 
@@ -327,6 +338,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
     }
 
     useEffect(() => {
+        getEvents()
         const viewSelect = new SlimSelect({
             select: '#calendar-view',
             settings: { showSearch: false },
@@ -335,6 +347,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
         changeView('month')
 
+        // Destroy SlimSelects on Page Change
         return () => viewSelect.destroy()
     }, [])
 
@@ -365,7 +378,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
                     view='month'
                     template={{
                         popupDetailLocation: schedule => 'Location: ' + schedule.location,
-                        popupDetailRepeat: schedule => 'Repeat: ' + schedule.recurrenceRule + '<br>organiser: ' + schedule.dueDateClass,
+                        popupDetailRepeat: schedule => 'Repeat: ' + schedule.recurrenceRule + '<br>Organiser: ' + schedule.dueDateClass,
                         popupDetailUser: schedule => 'Members: ' + schedule.attendees?.join(', '),
                         popupDetailState: schedule => 'State: ' + schedule.state,
                         popupDetailBody: schedule => 'Desc: ' + schedule.body,
@@ -385,7 +398,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
                         try {
                             let res = await request('events/' + evtID)
-                            res = res.data
+                            res = res.data.data
 
                             setCreationModal(true)
                             setEvt(res)
@@ -399,10 +412,11 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
                         if (window.confirm('Do you really want to delete this Event?'))
                             try {
-                                let res = await request('events/created' + evtID, { method: 'DELETE' })
+                                let res = await request('events/created/' + evtID, { method: 'DELETE' })
                                 res = res.data
 
                                 toast.success(res.msg)
+                                genInstance().deleteSchedule(evtID, '1', false)
                             } catch (error: any) {
                                 toast.error(error.message)
                             }

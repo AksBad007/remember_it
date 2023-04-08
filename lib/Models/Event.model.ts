@@ -1,8 +1,8 @@
-import { models, model, Schema } from 'mongoose';
+import { models, model, Schema } from 'mongoose'
 
 const EventSchema: Schema = new Schema({
-    start_date: { type: Number, required: true },
-    end_date: { type: Number, required: true },
+    start_date: { type: Date, required: true },
+    end_date: { type: Date, required: true },
     next_reminder: { type: Number, required: true, default: 0 },
     title: { type: String, required: true },
     description: { type: String, required: false },
@@ -10,7 +10,7 @@ const EventSchema: Schema = new Schema({
     reminder_status: { type: Boolean, required: true, default: false},
     notify: { type: Number, required: true },
     created_by: {
-        userID: { type: Schema.Types.ObjectId, required: true },
+        userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
         username: { type: String, required: false },
         email: { type: String, required: false },
     },
@@ -20,11 +20,11 @@ const EventSchema: Schema = new Schema({
         link : { type: String, required: false },
     },
     invited_users: [{
-        userID: { type: Schema.Types.ObjectId, required: true },
+        userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
         username: { type: String, required: false },
         email: { type: String, required: false },
-        status: { type: String, required: true, default: "pending" }
+        status: { type: String, required: true, default: 'pending' }
     }]
 });
 
-export default models.Event || model("Event", EventSchema)
+export default models.Event || model('Event', EventSchema)

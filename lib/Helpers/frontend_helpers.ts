@@ -15,9 +15,9 @@ export const request = async (url: string, options: RequestInit = {}) => {
     throw new Error(data.error)
 }
 
-export const postData = async (url: string, body: any) => {
+export const post_or_put_data = async (url: string, body: any, post=true) => {
     let req = await request(url, {
-        method: 'POST',
+        method: post ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
     })

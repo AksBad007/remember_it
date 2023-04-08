@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import { useCookies } from 'react-cookie'
 import { toast } from 'react-toastify'
-import { postData, _handleSubmit } from '../Helpers/frontend_helpers'
+import { post_or_put_data, _handleSubmit } from '../Helpers/frontend_helpers'
 import styles from '../../styles/Login.module.css'
 
 interface LoginProps {
@@ -17,7 +17,7 @@ export default function Login({ login=false }: LoginProps) {
     const userData = _handleSubmit(e)
 
     try {
-      let res = await postData(_authUrl, userData)
+      let res = await post_or_put_data(_authUrl, userData)
       res = res.data
 
       toast.success(res.msg)

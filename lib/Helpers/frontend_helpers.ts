@@ -1,7 +1,7 @@
 // Convert Form Data to JSON
-export const _handleSubmit = (evt: React.FormEvent<HTMLFormElement>) => {
-    evt.preventDefault()
-    return Object.fromEntries(new FormData(evt.currentTarget))
+export const _handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    return Object.fromEntries(new FormData(e.currentTarget))
 }
 
 //Network Requests

@@ -6,7 +6,7 @@ import SlimSelect from 'slim-select'
 import DatePicker from 'react-datepicker'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import Modal from './Modal'
-import { _handleSubmit, postData } from '../Helpers/frontend_helpers'
+import { _handleSubmit, postData, request } from '../Helpers/frontend_helpers'
 import 'tui-calendar/dist/tui-calendar.css'
 import 'react-datepicker/dist/react-datepicker.css'
 import styles from '../../styles/Calendar.module.css'
@@ -380,19 +380,32 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
                         setCreationModal(true)
                         setEvtDates({ start, end })
                     }}
-                    onBeforeUpdateSchedule={e => {
-                        const evt = e.schedule
+                    onBeforeUpdateSchedule={async (evt) => {
+                        const evtID = evt.schedule.id
 
-                        // request(calendarURL + 'getEvent/' + evt.id, { headers: headers })
-                        //     .then(res => res.event)
-                        //     .then(evt => { showModal(true) setEvt(evt) setStart(new Date(evt.start_date)) setEnd(new Date(evt.end_date)) })
+                        try {
+                            let res = await request('events/' + evtID)
+                            res = res.data
+
+                            setCreationModal(true)
+                            setEvt(res)
+                            setEvtDates({ start: new Date(res.start_date), end: new Date(res.end_date) })
+                        } catch (error: any) {
+                            toast.error(error.message)
+                        }
                     }}
-                    onBeforeDeleteSchedule={e => {
-                        const evt = e.schedule
+                    onBeforeDeleteSchedule={async (evt) => {
+                        const evtID = evt.schedule.id
 
-                        // if (window.confirm('Do you really want to delete this Event?'))
-                        //     request(calendarURL + 'delete/' + project_id + '/' + evt.id, { headers: headers, method: 'DELETE' })
-                        //     .then(() => genInstance().deleteSchedule(evt.id, '1', false))
+                        if (window.confirm('Do you really want to delete this Event?'))
+                            try {
+                                let res = await request('events/created' + evtID, { method: 'DELETE' })
+                                res = res.data
+
+                                toast.success(res.msg)
+                            } catch (error: any) {
+                                toast.error(error.message)
+                            }
                     }}
                 />
                 <button className={ styles['calendar-btns'] } onClick={next}><FaChevronRight /></button>

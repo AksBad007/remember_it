@@ -8,6 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await dbConnect()
     const { method, body } = req
 
+    // Create an Event
     if (method === 'POST') {
         const EventSchema = Joi.object({
             start_date: Joi.date().required(),
@@ -79,6 +80,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     return raiseError(res)
             }
         }
-    } else
-        return raiseNotFound(res)
+    }
+    return raiseNotFound(res)
 }

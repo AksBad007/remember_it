@@ -2,7 +2,8 @@ import { GetServerSideProps } from 'next'
 import { getUserInfo } from '../lib/Helpers/db_helpers'
 import Users from '../lib/Models/User.model'
 
-let count = 0
+let offset = 0
+const limit = global.limit
 
 export default function friends({ friendList }: any) {
     console.log(friendList)
@@ -15,12 +16,12 @@ export default function friends({ friendList }: any) {
 export const getServerSideProps: GetServerSideProps = async (context) => {
     try {
         const { friends_added, friends_recieved, friends_sent } = await getUserInfo(context.req)
-        const yo = [...friends_added, ...friends_recieved, ...friends_sent].map(friend => friend._id)
-        const friendList = await Users.find({ _id: { $in: yo } }, '_id username email').skip(count).limit(20).sort({ username: 1 })
+        const friendIds: string[] = [...friends_added, ...friends_recieved, ...friends_sent].map(friend => friend._id)
+        const friendList = await Users.find({ _id: { $in: friendIds } }, '_id username email').skip(offset).limit(limit).sort({ username: 'asc' })
 
         return {
             props: {
-                frienList: JSON.parse(JSON.stringify(friendList))
+                friendList: JSON.parse(JSON.stringify(friendList))
             }
         }
     } catch (error) {

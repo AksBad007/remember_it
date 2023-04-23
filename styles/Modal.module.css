@@ -40,7 +40,7 @@
     border: none;
     font-size: 25px;
     cursor: pointer;
-    background-color: #e3cb81;
+    background-color: var(--blue-button-bg);
     padding: 0 1rem;
     border-radius: 4px;
 }
@@ -50,18 +50,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.modal-body button {
-    border: 0;
-    background-color: #e3cb81;
-    padding: 8px;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.modal-body button:hover, .modal-title button:hover {
-    background-color: var(--orange_button_bg);
 }
 
 .modal-body input[type="checkbox"] {

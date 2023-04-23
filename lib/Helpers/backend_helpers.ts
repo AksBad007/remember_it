@@ -7,6 +7,7 @@ declare global {
     promise: Promise<Mongoose> | null
     conn: Mongoose | null
   }
+  var limit: 20
 }
 
 const jwt_key = process.env.JWT_SECRET as string

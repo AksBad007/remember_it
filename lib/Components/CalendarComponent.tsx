@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Calendar from '@toast-ui/react-calendar'
 import { toast } from 'react-toastify'
 import { ISchedule } from 'tui-calendar'
@@ -37,29 +37,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
     const formatdate = (date: any) => new Date(date).toLocaleString('en', { year: 'numeric', month: 'long', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-    const rangeChange = () => {
-        const calendar = genInstance()
-        const calendarView: string = calendar.getViewName()
-
-        switch (calendarView) {
-            case 'day':
-                setCurrentRange(calendar.getDate()._date.toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: '2-digit' }))
-                break
-            case 'week':
-                setCurrentRange(
-                    calendar.getDateRangeStart()._date.toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: '2-digit' })
-                    + ' - ' +
-                    calendar.getDateRangeEnd()._date.toLocaleDateString('en-us', {year: 'numeric', month: 'short', day: '2-digit'})
-                )
-                break
-            default:
-                setCurrentRange(calendar.getDate()._date.toLocaleDateString('en-us', { year: 'numeric', month: 'long' }))
-                break
-        }
-    }
-
-    const createSchedule = (evt: any) => {
-        console.log('evt =', evt)
+    const createSchedule = useCallback((evt: any) => {
         let newEvent: ISchedule = {
             calendarId: '1',
             category: 'time',
@@ -93,15 +71,14 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
         }
 
         return newEvent
-    }
+    }, [userInfo._id])
 
-    const getEvents = async () => {
+    const getEvents = useCallback(async () => {
         const calendar = genInstance()
         const start: Date = calendar.getDateRangeStart()._date
         const end: Date = calendar.getDateRangeEnd()._date
 
         calendar.clear()
-        rangeChange()
 
         try {
             const eventRes = await request(`events/paginated/${ start.getFullYear() }/${ start.getMonth() }/${ end.getMonth() }/${ start.getDate() }/${ end.getDate() }`)
@@ -111,30 +88,53 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
             if (totalEvents)
                 schedules = allEvents.map((evt: any) => createSchedule(evt))
 
-                calendar.createSchedules(schedules)
+            calendar.createSchedules(schedules)
         } catch (error: any) {
             toast.error(error.message)
         }
-    }
+    }, [createSchedule])
 
-    const changeView = (calendarView: string) => {
+    const rangeChange = useCallback(() => {
+        const calendar = genInstance()
+        const calendarView: string = calendar.getViewName()
+
+        switch (calendarView) {
+            case 'day':
+                setCurrentRange(calendar.getDate()._date.toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: '2-digit' }))
+                break
+            case 'week':
+                setCurrentRange(
+                    calendar.getDateRangeStart()._date.toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: '2-digit' })
+                    + ' - ' +
+                    calendar.getDateRangeEnd()._date.toLocaleDateString('en-us', {year: 'numeric', month: 'short', day: '2-digit'})
+                )
+                break
+            default:
+                setCurrentRange(calendar.getDate()._date.toLocaleDateString('en-us', { year: 'numeric', month: 'long' }))
+                break
+        }
+
+        getEvents()
+    }, [getEvents])
+
+    const changeView = useCallback((calendarView: string) => {
         genInstance().changeView(calendarView, true)
         rangeChange()
-    }
+    }, [rangeChange])
 
     const next = () => {
       genInstance().next()
-      getEvents()
+      rangeChange()
     }
 
     const prev = () => {
         genInstance().prev()
-        getEvents()
+        rangeChange()
     }
 
     const getToday = () => {
         genInstance().today()
-        getEvents()
+        rangeChange()
     }
 
     const resetEvt = () => {
@@ -181,7 +181,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
         const updateEvent = async (e: React.FormEvent<HTMLFormElement>) => {            
             try {
-                const res = await post_or_put_data('events', createEvtBody(_handleSubmit(e)), false)
+                const res = await post_or_put_data('events/' + evt._id, createEvtBody(_handleSubmit(e)), false)
                 const { data, msg } = res.data
 
                 calendarInstance.updateSchedule(data._id, '1', createSchedule(data), false)
@@ -329,8 +329,8 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
                 <span id={ styles['evt-required-flag'] }> *Required </span>
 
                 <div id={ styles['evt-btns'] }>
-                    <button type='submit'> Submit </button>
-                    <button type='reset'> Cancel </button>
+                    <button className='btn btn-primary' type='submit'> Submit </button>
+                    <button className='btn btn-danger' type='reset'> Cancel </button>
                 </div>
             </form>
 
@@ -338,7 +338,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
     }
 
     useEffect(() => {
-        getEvents()
+        console.log('effect')
         const viewSelect = new SlimSelect({
             select: '#calendar-view',
             settings: { showSearch: false },
@@ -349,7 +349,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
         // Destroy SlimSelects on Page Change
         return () => viewSelect.destroy()
-    }, [])
+    }, [changeView])
 
     return (
         <>
@@ -376,6 +376,24 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
                     useCreationPopup={false}
                     height='80vh'
                     view='month'
+                    calendars={[
+                        {
+                            id: '1',
+                            name: 'Scheduled Event',
+                            color: '#ffffff',
+                            bgColor: 'var(--purple)',
+                            dragBgColor: 'var(--purple)',
+                            borderColor: 'var(--purple)'
+                        },
+                        {
+                            id: '2',
+                            name: 'Holiday',
+                            color: '#ffffff',
+                            bgColor: 'var(--purple)',
+                            dragBgColor: 'var(--purple)',
+                            borderColor: 'var(--purple)'
+                        }
+                    ]}
                     template={{
                         popupDetailLocation: schedule => 'Location: ' + schedule.location,
                         popupDetailRepeat: schedule => 'Repeat: ' + schedule.recurrenceRule + '<br>Organiser: ' + schedule.dueDateClass,

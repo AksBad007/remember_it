@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import Link from 'next/link'
+import { useState } from 'react'
 import { IconContext } from 'react-icons'
 import { FaUserFriends, FaBars, FaChevronLeft } from 'react-icons/fa'
 import { IoSend } from 'react-icons/io5'
@@ -12,7 +12,7 @@ interface NavBarProps {
     showSide: boolean
 }
 
-export default function NavBar({ showSide = true }: NavBarProps) {
+export default function NavBar({ showSide=true }: NavBarProps) {
     const [sidebar, setSidebar] = useState(false)
     const toggleBar = () => setSidebar(!sidebar)
     const SidebarData = [
@@ -44,9 +44,9 @@ export default function NavBar({ showSide = true }: NavBarProps) {
                 <div>
                     {
                         showSide &&
-                        <Link href="" onClick={ toggleBar } id={ styles['open-sidebar'] } className={ styles['menu-bars'] }>
+                        <span onClick={ toggleBar } id={ styles['open-sidebar'] } className={ styles['menu-bars'] }>
                             <FaBars />
-                        </Link>
+                        </span>
                     }
                 </div>
 
@@ -62,9 +62,9 @@ export default function NavBar({ showSide = true }: NavBarProps) {
                 <nav className={ sidebar ? `${ styles['nav-menu'] } ${ styles['active'] }` : styles['nav-menu'] }>
                     <ul className={ styles['nav-menu-items'] }>
                         <li id={ styles['navbar-toggle'] }>
-                            <Link href="" id={ styles['close-sidebar'] } onClick={ toggleBar } className={ styles['menu-bars'] }>
+                            <span id={ styles['close-sidebar'] } onClick={ toggleBar } className={ styles['menu-bars'] }>
                                 <FaChevronLeft />
-                            </Link>
+                            </span>
                         </li>
 
                         {

@@ -1,6 +1,7 @@
 import { connect, set } from 'mongoose'
 import { decodeAuth } from './backend_helpers'
 import Users from '../Models/User.model'
+import Events from '../Models/Event.model'
 
 let cached = global.mongoose
 
@@ -11,7 +12,6 @@ if (!cached) {
 interface QueryFilter {
   [key: string]: any
 }
-
 
 export default async function dbConnect() {
   if (cached.conn)
@@ -67,4 +67,30 @@ export const searchUsers = async (query: string | string[], userID?: any) => {
   }
 
   return await Users.find(filter).limit(5)
+}
+
+// Fetch Events
+export const getEvents = async (offset: number, userID: any, sent=false) => {
+  await dbConnect()
+  const filter = sent ? { 'created_by.userID': userID } : { 'invited_users.userID': userID }
+
+  const allEvents = await Events
+    .find(filter)
+    .skip(offset)
+    .limit(global.limit)
+    .sort({ start_date: 'asc' })
+    .populate('created_by.userID invited_users.userID', 'email username')
+  const totalEvents = await Events.countDocuments(filter)
+
+  return { allEvents, totalEvents }
+}
+
+// Respond to Event
+export const respond = async (evtID: string, userID: string, status: string) => {
+  await dbConnect()
+  const reqEvt = await Events.findById(evtID)
+  const reqUser = reqEvt.invited_users.find((user: any) => JSON.stringify(user.userID) === JSON.stringify(userID))
+
+  reqUser.status = status
+  await reqEvt.save()
 }

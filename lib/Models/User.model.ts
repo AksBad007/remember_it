@@ -2,9 +2,7 @@ import { models, model, Schema } from 'mongoose'
 import { hash } from 'bcrypt'
 
 const FriendSchema = new Schema({
-  userID: { type: Schema.Types.ObjectId, required: true },
-  username: { type: String, required: false },
-  email: { type: String, required: false }
+  userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' }
 })
 
 const UserSchema: Schema = new Schema({

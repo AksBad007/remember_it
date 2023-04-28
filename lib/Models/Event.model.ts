@@ -10,9 +10,7 @@ const EventSchema: Schema = new Schema({
     reminder_status: { type: Boolean, required: true, default: false},
     notify: { type: Number, required: true },
     created_by: {
-        userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-        username: { type: String, required: false },
-        email: { type: String, required: false },
+        userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' }
     },
     location: {
         coordinates: { type: [ Number ], required: false },
@@ -21,8 +19,6 @@ const EventSchema: Schema = new Schema({
     },
     invited_users: [{
         userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-        username: { type: String, required: false },
-        email: { type: String, required: false },
         status: { type: String, required: true, default: 'pending' }
     }]
 });

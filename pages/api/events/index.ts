@@ -1,10 +1,14 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest } from 'next'
 import Joi from 'joi'
-import { raiseNotFound, raiseError, raiseSuccess } from '../../../lib/Helpers/backend_helpers'
+import { raiseNotFound, raiseError, raiseSuccess, findConnection, NextApiResponseServerIO } from '../../../lib/Helpers/backend_helpers'
 import dbConnect, { getUserInfo } from '../../../lib/Helpers/db_helpers'
 import Events from '../../../lib/Models/Event.model'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+interface InvitedUser {
+    userID: string, status?: string
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
     await dbConnect()
     const { method, body } = req
 
@@ -38,13 +42,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 userID: reqUser._id
             }
 
-            newEvent.invited_users.forEach((invitedUser: { userID: string, status?: string }) => invitedUser.status = 'pending')
+            newEvent.invited_users.forEach((invitedUser: InvitedUser) => invitedUser.status = 'pending')
 
             // checking and setting first reminder
             if (newEvent.reminder_status) {
                 if (newEvent.start_date > Date.now()) newEvent.next_reminder = newEvent.start_date - newEvent.notify * 1000
                 else {
-                    let actualDate = new Date(newEvent.start_date).setFullYear(new Date().getFullYear(), new Date().getMonth())
+                    const actualDate = new Date(newEvent.start_date).setFullYear(new Date().getFullYear(), new Date().getMonth())
                     switch (newEvent.repeat_status) {
                         case 1:
                             actualDate < Date.now() ? newEvent.next_reminder = new Date(actualDate).setDate(new Date().getDate() + 1) : newEvent.next_reminder = actualDate
@@ -68,6 +72,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             const result = await new Events(newEvent).save()
+
+            // Send notifications
+            let onlineUsers: string[] = []
+            result.invited_users.forEach((invitedUser: InvitedUser) => {
+                let reqSocket = findConnection(invitedUser.userID)
+                if (reqSocket)
+                    onlineUsers.push(reqSocket.socketID as string)
+            })
+            res.socket.server.io.in(onlineUsers).emit('newEvt', result)
 
             return raiseSuccess(res, { msg: 'Event Created Successfully.', data: result })
         } catch (error: any) {

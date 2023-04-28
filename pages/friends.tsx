@@ -1,6 +1,7 @@
 import { GetServerSideProps } from 'next'
 import { getUserInfo } from '../lib/Helpers/db_helpers'
 import Users from '../lib/Models/User.model'
+import Search from '../lib/Components/Search'
 
 let offset = 0
 const limit = global.limit
@@ -8,8 +9,10 @@ const limit = global.limit
 export default function friends({ friendList }: any) {
     console.log(friendList)
 
-  return (
-    <div>friends</div>
+    return (
+        <div className='d-flex flex-column mt-2 align-items-center'>
+            <Search />
+        </div>
   )
 }
 

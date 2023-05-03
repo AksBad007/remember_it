@@ -1,7 +1,7 @@
 import type { NextApiResponse } from 'next'
 import { SignJWT, jwtVerify } from 'jose'
 import { Mongoose } from 'mongoose'
-import { NextApiResponseServerIO } from './socket_helpers'
+import type { NextApiResponseServerIO } from '../Helpers/socket_helpers'
 
 declare global {
   var mongoose: {

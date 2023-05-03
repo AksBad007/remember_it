@@ -1,18 +1,14 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { IconContext } from 'react-icons'
-import { FaUserFriends, FaBars, FaChevronLeft } from 'react-icons/fa'
+import { FaUserFriends, FaBars, FaChevronLeft, FaPowerOff } from 'react-icons/fa'
 import { IoSend } from 'react-icons/io5'
 import { IoMdSettings } from 'react-icons/io'
 import { AiFillHome } from 'react-icons/ai'
 import { MdOutlineCallReceived } from 'react-icons/md'
-import styles from '../../styles/NavBar.module.css'
+import styles from '../../../styles/NavBar.module.css'
 
-interface NavBarProps {
-    showSide: boolean
-}
-
-export default function NavBar({ showSide=true }: NavBarProps) {
+export default function NavBar({ showSide=true }) {
     const [sidebar, setSidebar] = useState(false)
     const toggleBar = () => setSidebar(!sidebar)
     const SidebarData = [
@@ -23,12 +19,12 @@ export default function NavBar({ showSide=true }: NavBarProps) {
         },
         {
             title: 'Received',
-            path: '/events/received',
+            path: '/calendar/received',
             icon: <MdOutlineCallReceived />
         },
         {
             title: 'Sent',
-            path: '/events/sent',
+            path: '/calendar/sent',
             icon: <IoSend />
         },
         {
@@ -54,7 +50,14 @@ export default function NavBar({ showSide=true }: NavBarProps) {
                     <h1>Remember It!</h1>
                 </div>
 
-                <div></div>
+                {
+                    showSide &&
+                    <div className='d-flex justify-content-center'>
+                        <Link href='/logout' id='logout-btn' className={ styles['menu-bars'] }>
+                            <FaPowerOff />
+                        </Link>
+                    </div>
+                }
             </div>
 
             {

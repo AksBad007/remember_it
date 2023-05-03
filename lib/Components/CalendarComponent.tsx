@@ -4,8 +4,8 @@ import { toast } from 'react-toastify'
 import { ISchedule } from 'tui-calendar'
 import SlimSelect from 'slim-select'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
-import CalendarCreationModal from './CalendarCreationModal'
-import { _handleSubmit, request, createSchedule } from '../Helpers/frontend_helpers'
+import CalendarCreationModal from './custom/CalendarCreationModal'
+import { request, createSchedule } from '../Helpers/frontend_helpers'
 import 'tui-calendar/dist/tui-calendar.css'
 import styles from '../../styles/Calendar.module.css'
 
@@ -33,7 +33,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
         try {
             const eventRes = await request(`events/paginated/${ start.getFullYear() }/${ start.getMonth() }/${ end.getMonth() }/${ start.getDate() }/${ end.getDate() }`)
-            const { allEvents, totalEvents } = eventRes.data.data
+            const { allEvents, totalEvents } = eventRes.data
             let schedules: ISchedule[] = []
 
             if (totalEvents)
@@ -181,7 +181,7 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
 
                         try {
                             let res = await request('events/' + evtID)
-                            res = res.data.data
+                            res = res.data
 
                             setCreationModal(true)
                             setEvt(res)
@@ -196,7 +196,6 @@ export default function CalendarComponent({ userInfo }: CalendarProps) {
                         if (window.confirm('Do you really want to delete this Event?'))
                             try {
                                 let res = await request('events/created/' + evtID, { method: 'DELETE' })
-                                res = res.data
 
                                 toast.success(res.msg)
                                 genInstance().deleteSchedule(evtID, '1', false)

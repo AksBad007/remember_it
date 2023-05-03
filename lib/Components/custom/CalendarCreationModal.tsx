@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import SlimSelect from 'slim-select'
 import DatePicker from 'react-datepicker'
-import Modal from './Modal'
-import { _handleSubmit, post_or_put_data, createSchedule } from '../Helpers/frontend_helpers'
+import Modal from '../UI/Modal'
+import { handleSubmit, post_or_put_data, createSchedule } from '../../Helpers/frontend_helpers'
 import { toast } from 'react-toastify'
 import 'react-datepicker/dist/react-datepicker.css'
-import styles from '../../styles/Calendar.module.css'
+import styles from '../../../styles/Calendar.module.css'
 
 interface CalendarCreationModalProps {
     userInfo: any
@@ -43,8 +43,8 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
 
     const createNewEvent = async (e: React.FormEvent<HTMLFormElement>) => {
         try {
-            let res = await post_or_put_data('events', createEvtBody(_handleSubmit(e)))
-            const { data, msg } = res.data
+            let res = await post_or_put_data('events', createEvtBody(handleSubmit(e)))
+            const { data, msg } = res
 
             calendarInstance.createSchedules([createSchedule(data, userInfo)])
             toast.success(msg)
@@ -56,8 +56,8 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
 
     const updateEvent = async (e: React.FormEvent<HTMLFormElement>) => {            
         try {
-            const res = await post_or_put_data('events/' + evt._id, createEvtBody(_handleSubmit(e)), false)
-            const { data, msg } = res.data
+            const res = await post_or_put_data('events/' + evt._id, createEvtBody(handleSubmit(e)), false)
+            const { data, msg } = res
 
             if (calendarInstance)
                 calendarInstance.updateSchedule(data._id, '1', createSchedule(data, userInfo), false)

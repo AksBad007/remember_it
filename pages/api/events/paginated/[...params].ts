@@ -27,8 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const orCondition = [
-        { 'created_by.userID': userID },
-        { 'invited_users.userID': userID }
+        { 'created_by.user': userID },
+        { 'invited_users.user': userID }
       ]
 
       const allEvents = await Events
@@ -65,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { $or: orCondition }
           ]
         })
-        .populate('created_by.userID invited_users.userID', 'email username')
+        .populate('created_by.user invited_users.user', 'email username')
 
       const totalEvents = await Events.countDocuments({ $or: orCondition })
 

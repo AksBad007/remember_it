@@ -1,0 +1,32 @@
+#friends-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 70%;
+    gap: 1rem;
+}
+
+.frnd-user-main {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.frnd-user-main img {
+    border-radius: 50px;
+}
+
+.frnd-username {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.no-frnds, .no-frnds-inside {
+    display: flex;
+    justify-content: center;
+}
+
+.no-frnds-inside {
+    width: 25rem;
+}

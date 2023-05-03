@@ -36,11 +36,9 @@
 
 .modal-title button {
     float: right;
-    background-color: transparent;
     border: none;
     font-size: 25px;
     cursor: pointer;
-    background-color: var(--blue-button-bg);
     padding: 0 1rem;
     border-radius: 4px;
 }

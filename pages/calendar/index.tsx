@@ -1,14 +1,18 @@
 import { GetServerSideProps } from 'next'
 import dynamic from 'next/dynamic'
-import Loader from '../lib/Components/Loader'
-import { getUserInfo } from '../lib/Helpers/db_helpers'
+import Loader from '../../lib/Components/UI/Loader'
+import { getUserInfo } from '../../lib/Helpers/db_helpers'
+import { useContext } from 'react'
+import { SocketContext } from '../../lib/Helpers/socket_helpers'
 
 const CalendarComponent = dynamic(
-  () => import('../lib/Components/CalendarComponent'),
+  () => import('../../lib/Components/CalendarComponent'),
   { loading: () => <Loader />, ssr: false }
 )
 
 export default function Calendar({ user }: any) {
+    const socket = useContext(SocketContext)
+    console.log('connected with', socket.id)
     return <CalendarComponent userInfo={ user } />
 }
 

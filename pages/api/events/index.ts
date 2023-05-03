@@ -1,12 +1,10 @@
 import type { NextApiRequest } from 'next'
 import Joi from 'joi'
-import { raiseNotFound, raiseError, raiseSuccess, findConnection, NextApiResponseServerIO } from '../../../lib/Helpers/backend_helpers'
+import { raiseNotFound, raiseError, raiseSuccess } from '../../../lib/Helpers/backend_helpers'
+import { findConnection, NextApiResponseServerIO } from '../../../lib/Helpers/socket_helpers'
+import mail from '../../../lib/Helpers/mail_helpers'
 import dbConnect, { getUserInfo } from '../../../lib/Helpers/db_helpers'
 import Events from '../../../lib/Models/Event.model'
-
-interface InvitedUser {
-    userID: string, status?: string
-}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
     await dbConnect()
@@ -28,10 +26,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             })
                 .required(),
             invited_users: Joi.array().items(
-                Joi.object().keys({ userID: Joi.string().required })
+                Joi.object().keys({ user: Joi.string().required })
             )
                 .required()
-                .unique('user.userID')
+                .unique('user.user')
         })
 
         try {
@@ -39,10 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             const reqUser = await getUserInfo(req)
             
             newEvent.created_by = {
-                userID: reqUser._id
+                user: reqUser._id
             }
 
-            newEvent.invited_users.forEach((invitedUser: InvitedUser) => invitedUser.status = 'pending')
+            newEvent.invited_users.forEach((invitedUser: any) => invitedUser.status = 'pending')
 
             // checking and setting first reminder
             if (newEvent.reminder_status) {
@@ -72,17 +70,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             }
 
             const result = await new Events(newEvent).save()
+            const { title, created_by, invited_users } = result
 
             // Send notifications
             let onlineUsers: string[] = []
-            result.invited_users.forEach((invitedUser: InvitedUser) => {
-                let reqSocket = findConnection(invitedUser.userID)
+            invited_users.forEach((invitedUser: any) => {
+                let reqSocket = findConnection(invitedUser.user._id)
                 if (reqSocket)
                     onlineUsers.push(reqSocket.socketID as string)
             })
             res.socket.server.io.in(onlineUsers).emit('newEvt', result)
 
-            return raiseSuccess(res, { msg: 'Event Created Successfully.', data: result })
+            // Send Mails
+            const mailList = invited_users.map((user: any) => user.user.email)
+            const confirmMsg = 'Event Created Successfully!'
+            const msg = `
+                Dear User,
+                    This is to inform you that you have been invited to the Event - ${ title } by ${ created_by.user.username }.
+                    You can either accept it or reject it by going to ${ process.env.BASE_URL }/events/recieved.
+            `
+            await mail(confirmMsg, mailList, msg)
+
+            return raiseSuccess(res, { msg: confirmMsg, data: result })
         } catch (error: any) {
             console.error(error)
 

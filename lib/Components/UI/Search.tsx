@@ -1,21 +1,26 @@
 import { FaSearch } from 'react-icons/fa'
-import styles from '../../styles/Search.module.css'
+import styles from '../../../styles/Search.module.css'
 
-export default function Search() {
+interface SearchProps {
+    onSearch: (query: string) => Promise<void>
+    onClear: () => Promise<void>
+}
+
+export default function Search({ onSearch, onClear }: SearchProps) {
     let searchTimeout: NodeJS.Timeout
 
-    const searchSubmit = (e: React.FormEvent) => {
+    const searchSubmit = async (e: React.FormEvent) => {
         clearTimeout(searchTimeout)
-        const searchElement = e.target as HTMLInputElement
+        const { value } = e.target as HTMLInputElement
 
-        searchTimeout = setTimeout(() => {
-            console.log('value =', searchElement.value);
-            searchElement.value = ''
-        }, 1000)
+        if (value)
+            searchTimeout = setTimeout(async () => await onSearch(value), 1000)
+        else
+            await onClear()
     }
 
     return (
-        <form className={ `mb-4 ${styles['wrap']}` } onSubmit={() => false }>
+        <form className={ `mb-4 ${styles['wrap']}` } onSubmit={(e) => e.preventDefault() }>
             <div className={ styles['search'] }>
                 <div className='form-floating'>
                     <input

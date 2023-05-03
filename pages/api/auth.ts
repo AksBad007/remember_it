@@ -3,6 +3,7 @@ import Joi from 'joi'
 import { compare } from 'bcrypt'
 import { raiseNotFound, raiseError, raiseSuccess, signClaim, raiseUnauthorized } from '../../lib/Helpers/backend_helpers'
 import dbConnect, { getUserInfo } from '../../lib/Helpers/db_helpers'
+import mail from '../../lib/Helpers/mail_helpers'
 import Users from '../../lib/Models/User.model'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -26,7 +27,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         const result = await new Users(newUser).save()
                         const token = await signClaim(result._id)
 
-                        return raiseSuccess(res, { msg: 'Registration Succesful.', data: token })
+                        const { email, username } = result
+                        const msg = `Congratutions! ${username}, You have successfully registered.`
+                        const confirmMsg = 'Registration Succesful!'
+                        await mail(confirmMsg, email, msg)
+
+                        return raiseSuccess(res, { msg: confirmMsg, data: token })
                     } catch (error: any) {
                         console.error(error)
 
@@ -80,8 +86,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         case 'DELETE':
             try {
-                await Users.deleteOne({ _id: userID })
-                return raiseSuccess(res, { msg: 'User Successfully Removed.', data: null })
+                const { email, username } = await Users.findByIdAndDelete(userID)
+
+                const msg = `Dear ${username}, We are sorry to let you go. Your account has been permanently deleted.`
+                const confirmMsg = 'Account Deleted!'
+                await mail(confirmMsg, email, msg)
+
+                return raiseSuccess(res, { msg: confirmMsg, data: null })
             } catch (error) {
                 console.error(error)
 

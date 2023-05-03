@@ -54,6 +54,10 @@
     align-content: center;
 }
 
+#logout-btn {
+    padding: 5px;
+}
+
 .nav-user-context-menu {
     padding: 8px 2rem;
     border-radius: 8px;
@@ -100,7 +104,7 @@
     margin-left: 2rem;
     font-size: 2rem;
     background: none;
-    padding: 5px 5px 0 5px;
+    padding: 5px;
 }
 
 .nav-menu {

@@ -10,7 +10,7 @@ const EventSchema: Schema = new Schema({
     reminder_status: { type: Boolean, required: true, default: false},
     notify: { type: Number, required: true },
     created_by: {
-        userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' }
+        user: { type: Schema.Types.ObjectId, required: true, ref: 'User', unique: true }
     },
     location: {
         coordinates: { type: [ Number ], required: false },
@@ -18,9 +18,14 @@ const EventSchema: Schema = new Schema({
         link : { type: String, required: false },
     },
     invited_users: [{
-        userID: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+        user: { type: Schema.Types.ObjectId, required: true, ref: 'User', unique: true },
         status: { type: String, required: true, default: 'pending' }
     }]
-});
+})
+
+EventSchema.post('save', async function(doc, next) {
+    await doc.populate('created_by.user invited_users.user', 'email username')
+    next()
+})
 
 export default models.Event || model('Event', EventSchema)

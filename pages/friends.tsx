@@ -1,26 +1,201 @@
-import { GetServerSideProps } from 'next'
-import { getUserInfo } from '../lib/Helpers/db_helpers'
-import Users from '../lib/Models/User.model'
-import Search from '../lib/Components/Search'
+import type { GetServerSideProps } from 'next'
+import { useCallback, useContext, useEffect, useState } from 'react'
+import { toast } from 'react-toastify'
+import { getFriends } from '../lib/Helpers/db_helpers'
+import { decodeAuth } from '../lib/Helpers/backend_helpers'
+import { post_or_put_data, redirectObj, request } from '../lib/Helpers/frontend_helpers'
+import Search from '../lib/Components/UI/Search'
+import Modal from '../lib/Components/UI/Modal'
+import FriendComponent from '../lib/Components/custom/FriendComponent'
+import userImg from '../public/images/user-image.png'
+import styles from '../styles/Friends.module.css'
+import { SocketContext } from '../lib/Helpers/socket_helpers'
+import { useCookies } from 'react-cookie'
 
-let offset = 0
-const limit = global.limit
+let addedOffset = 0
+let requestsOffest = 0
 
-export default function friends({ friendList }: any) {
-    console.log(friendList)
+interface RequestsModalProps {
+    reset: () => void
+}
+
+const RequestsModal = ({ reset }: RequestsModalProps) => {
+    const [show, setShow] = useState(false)
+    const [requestList, setRequestList] = useState<any[]>([])
+
+    console.log('requests =', requestList);
+
+    const getRequests = useCallback(async () => {
+        try {
+            const { data } = await request('users/friends/requests/' + requestsOffest)
+            setRequestList(data.friendList)
+            requestsOffest += 20
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }, [])
+
+    const accept = async (userID: string) => {
+        try {
+            const { msg } = await post_or_put_data('user/friends/accept' + userID)
+            toast.info(msg)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
+    const reject = async (userID: string) => {
+        try {
+            const { msg } = await request('user/reject' + userID, { method: 'DELETE' })
+            toast.info(msg)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
+    const hideModal = () => {
+        setShow(false)
+        setTimeout(() => reset(), 500)
+    }
+
+    const body =
+        <>
+            {
+                requestList.length > 0 ?
+                requestList.map(({ _id, username }: any, idx) => (
+                    <FriendComponent
+                        key={ idx }
+                        user={{ username, userImg }}
+                        request
+                        onTrue={{
+                            fn: () => accept(_id),
+                            prompt: 'Accept'
+                        }}
+                        onFalse={{
+                            fn: () => reject(_id),
+                            prompt: 'Reject'
+                        }}
+                    />
+                )) :
+                <div className={ styles['no-frnds-inside'] }>No Friend Request.</div>
+            }
+        </>
+
+    useEffect(() => {
+        setShow(true)
+        getRequests()
+
+        return () => { requestsOffest = 0 }
+    }, [getRequests])
+
+    return <Modal bg={ show } closeOption closeModal={ hideModal } title='Friend Requests' body={ body } />
+}
+
+export default function Friends({ friendList }: { friendList: any[] }) {
+    const [cookies] = useCookies(['auth_token'])
+    const [frndsOnly, setFrndsOnly] = useState(false)
+    const [requestsModal, showRequestsModal] = useState(false)
+    const [frndList, setFrndList] = useState(friendList)
+    const socket = useContext(SocketContext)
+
+    if (!socket.connected) {
+        socket.connect()
+        socket.emit('newLogin', cookies.auth_token)
+    }
+
+    const searchUser = async (userQuery: string) => {
+        const query = new URLSearchParams({ userQuery })
+        try {
+            let { data } = await request(frndsOnly ? 'users/friends/search?' + query : 'users/search?' + query)
+            setFrndList(data.result)
+        } catch (error: any) {
+            console.error(error)
+
+            toast.error(error.message)
+        }
+    }
+
+    const resetList = async () => {
+        addedOffset = 0
+        try {
+            const { data } = await request('users/friends/' + addedOffset)
+            setFrndList(data.friendList)
+        } catch (error: any) {
+            console.error(error)
+
+            toast.error(error.message)
+        }
+    }
+
+    const remove = async (userID: string) => {
+        try {
+            let { msg } = await request('users/friends/remove/' + userID, { method: 'DELETE' })
+            toast.info(msg)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
+    const sendRequest = async (userID: string) => {
+        try {
+            let { msg } = await post_or_put_data('users/add/' + userID)
+            toast.info(msg)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
+    useEffect(() => {
+        console.log('list =', frndList)
+
+        socket.on('newRequest', (msg) => console.log('new Req =', msg))
+    }, [frndList])
 
     return (
-        <div className='d-flex flex-column mt-2 align-items-center'>
-            <Search />
-        </div>
+        <>
+            {
+                requestsModal &&
+                <RequestsModal reset={() => showRequestsModal(false)} />
+            }
+            <div className='d-flex flex-column mt-2 align-items-center'>
+                <Search onSearch={searchUser} onClear={resetList} />
+
+                <button className='btn btn-primary mb-4' onClick={() => showRequestsModal(true)}>
+                    Friend Requests
+                </button>
+
+                {
+                    frndList.length > 0 ?
+                    <div id={ styles['friends-list'] }>
+                        {
+                            frndList.map(({ _id, username }: any, idx) => (
+                                <FriendComponent
+                                    key={ idx }
+                                    user={{ username, userImg }}
+                                    condition={ frndsOnly }
+                                    onTrue={{
+                                        fn: () => remove(_id),
+                                        prompt: 'Remove Friend'
+                                    }}
+                                    onFalse={{
+                                        fn: () => sendRequest(_id),
+                                        prompt: 'Add Friend'
+                                    }}
+                                />
+                            ))
+                        }
+                    </div> :
+                    <div className={ styles['no-frnds'] }>No Friend Added Yet.</div>
+                }
+            </div>
+        </>
   )
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     try {
-        const { friends_added, friends_recieved, friends_sent } = await getUserInfo(context.req)
-        const friendIds: string[] = [...friends_added, ...friends_recieved, ...friends_sent].map(friend => friend._id)
-        const friendList = await Users.find({ _id: { $in: friendIds } }, '_id username email').skip(offset).limit(limit).sort({ username: 'asc' })
+        const userID = await decodeAuth(context.req.cookies.auth_token as string)
+        const friendList = await getFriends(addedOffset, userID)
 
         return {
             props: {
@@ -30,11 +205,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     } catch (error) {
         console.error(error)
 
-        return {
-            redirect: {
-                permanent: false,
-                destination: '/logout'
-            }
-        }
+        return redirectObj
     }
 }

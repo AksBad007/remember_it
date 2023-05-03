@@ -1,25 +1,34 @@
 import { GetServerSideProps } from 'next'
+import { useRouter } from 'next/router'
 import { useContext, useState } from 'react'
+import { useCookies } from 'react-cookie'
 import { toast } from 'react-toastify'
 import { getEvents, getUserInfo } from '../../lib/Helpers/db_helpers'
-import { SocketContext } from '../../lib/Helpers/socket_helpers'
 import { EventListProps, redirectObj, request } from '../../lib/Helpers/frontend_helpers'
-import Search from '../../lib/Components/Search'
-import EventComponent from '../../lib/Components/EventComponent'
-import CalendarCreationModal from '../../lib/Components/CalendarCreationModal'
+import { SocketContext } from '../../lib/Helpers/socket_helpers'
+import Search from '../../lib/Components/UI/Search'
+import EventComponent from '../../lib/Components/custom/EventComponent'
+import CalendarCreationModal from '../../lib/Components/custom/CalendarCreationModal'
 import styles from '../../styles/Event.module.css'
 
 let offset = 0
 
 export default function Sent({ userInfo, allEvents, totalEvents }: EventListProps) {
+    const router = useRouter()
+    const [cookies] = useCookies(['auth_token'])
     const [editModal, setEditModal] = useState(false)
     const [evt, setEvt] = useState<any>(null)
     const socket = useContext(SocketContext)
 
+    if (!socket.connected) {
+        socket.connect()
+        socket.emit('newLogin', cookies.auth_token)
+    }
+
     const edit = async (evtID: string) => {
         try {
             let res = await request('events/' + evtID)
-            res = res.data.data
+            res = res.data
 
             setEditModal(true)
             setEvt(res)
@@ -37,7 +46,6 @@ export default function Sent({ userInfo, allEvents, totalEvents }: EventListProp
         if (window.confirm('Do you really want to delete this Event?'))
             try {
                 let res = await request('events/created/' + evtID, { method: 'DELETE' })
-                res = res.data
 
                 toast.success(res.msg)
             } catch (error: any) {

@@ -1,4 +1,4 @@
-import styles from '../../styles/Event.module.css'
+import styles from '../../../styles/Event.module.css'
 
 interface Action {
   prompt: string
@@ -43,7 +43,7 @@ export default function Event({ evt, action, cancel }: EventProps) {
             <span className={ styles['evt-item_bg-item_child'] }>
               {
                 invited_users.length > 0 ?
-                invited_users.map((user: any) => user.userID.username).join(', ') :
+                invited_users.map((user: any) => user.user.username).join(', ') :
                 'No Members Added.'
               }
             </span>

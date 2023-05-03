@@ -1,4 +1,4 @@
-import Collapse from '../lib/Components/Collapse'
+import Collapse from '../lib/Components/UI/Collapse'
 import Login from '../lib/Components/Login'
 
 export default function Auth() {

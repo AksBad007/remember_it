@@ -1,6 +1,7 @@
 import type { NextApiRequest } from 'next'
 import { Server as SocketIOServer } from 'socket.io'
-import { NextApiResponseServerIO, findConnection } from '../../lib/Helpers/socket_helpers'
+import { decodeAuth } from '../../lib/Helpers/backend_helpers'
+import { findConnection, NextApiResponseServerIO } from '../../lib/Helpers/socket_helpers'
 
 let connectedUsers = global.connectedUsers
 
@@ -16,25 +17,38 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
   const io = res.socket.server.io
 
   io.on('connection', socket => {
-    const userID = req.headers.userid as string
     const socketID = socket.id
 
-    // Update Existing Conections
-    const reqConnection = findConnection(userID)
-    if (reqConnection)
-      reqConnection.socketID = socketID
-    else
-      connectedUsers.push({ userID, socketID })
+    console.log('New Connection =', socketID)
+    socket.emit('sendUserID')
 
-    // console.log('Connected Users =', connectedUsers)
+    socket.on('newLogin', async (auth_token: string) => {
+      const userID = await decodeAuth(auth_token)
 
-    socket.on('disconnect', () => {
+      console.log('New Login from', userID)
+
+      // Update Existing Conections
+      const reqConnection = findConnection(userID)
+      if (reqConnection)
+        reqConnection.socketID = socketID
+      else
+        connectedUsers.push({ userID, socketID })
+
+      console.log('Connected Users =', connectedUsers)
+    })
+
+    socket.on('beforeDisconnect', async (auth_token: string) => {
+      const userID = await decodeAuth(auth_token)
+
+      console.log(userID, 'about to disconnect')
+
       const idx = connectedUsers.findIndex(connection => connection.userID === userID)
       if (idx > -1)
         connectedUsers.splice(idx, 1)
 
-      // console.log('Disconnected with', socketID)
-      // console.log('Connected Users =', connectedUsers)
+      socket.disconnect()
+      console.log('Disconnected with', socketID)
+      console.log('Connected Users =', connectedUsers)
     })
   })
 

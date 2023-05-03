@@ -2,7 +2,7 @@ import { ISchedule } from 'tui-calendar'
 
 //Interfaces
 interface InvitedUser {
-    userID: string | any
+    user: string | any
     username: string
     email: string
     status: string
@@ -22,7 +22,7 @@ export const redirectObj = {
 }
 
 // Convert Form Data to JSON
-export const _handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+export const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     return Object.fromEntries(new FormData(e.currentTarget))
 }
@@ -33,7 +33,7 @@ export const request = async (url: string, options: RequestInit = {}) => {
     let data = await req.json()
 
     if (req.ok)
-        return data
+        return data.data
 
     throw new Error(data.error)
 }
@@ -50,6 +50,7 @@ export const post_or_put_data = async (url: string, body?: any, post=true) => {
 
 // Return Event Body
 export const createSchedule = (evt: any, userInfo: any) => {
+    console.log(evt, userInfo)
     let newEvent: ISchedule = {
         calendarId: '1',
         category: 'time',
@@ -59,9 +60,9 @@ export const createSchedule = (evt: any, userInfo: any) => {
         start: evt.start_date,
         end: evt.end_date,
         location: evt.location.description,
-        dueDateClass: evt.created_by.userID.username,
-        attendees: evt.invited_users.map((user: InvitedUser) => user.userID.username),
-        isReadOnly: !(userInfo._id === evt.created_by.userID._id)
+        dueDateClass: evt.created_by.user.username,
+        attendees: evt.invited_users.map((user: InvitedUser) => user.user.username),
+        isReadOnly: !(userInfo._id === evt.created_by.user._id)
     }
 
     switch (evt.repeat_status) {

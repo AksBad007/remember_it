@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 
     if (method === 'DELETE')
         try {
-            const currentUser = await Users.findById(userid).populate('created_by.user invited_users.user', 'email username')
+            const currentUser = await Users.findById(userid).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
             const potentialFrnd = await Users.findById(frndID)
 
             if (!potentialFrnd)
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 
             await Promise.all([currentUser.save(), potentialFrnd.save])
 
-            return raiseSuccess(res, { msg: 'Friend Removed', data: null })
+            return raiseSuccess(res, { msg: 'Friend Removed.', data: null })
         } catch (error) {
             console.error(error)
 

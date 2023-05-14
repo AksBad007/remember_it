@@ -11,20 +11,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 
     if (method === 'PUT')
         try {
-            const currentUser = await Users.findById(userid).populate('created_by.user invited_users.user', 'email username')
-            const potentialFrnd = await Users.findById(frndID)
+            const currentUser = await Users.findById(userid).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
+            const potentialFrnd = await Users.findById(frndID).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
 
             if (!potentialFrnd)
                 return raiseNotFound(res, 'User does not Exist.')
 
             currentUser.friends_added.push({ user: frndID })
+            potentialFrnd.friends_added.push({ user: currentUser._id })
 
-            const sentEntry = currentUser.friend_sent.findIndex((user: any) => JSON.stringify(user.user._id) === frndID)
+            let sentEntry = currentUser.friends_recieved.findIndex((user: any) => JSON.stringify(user.user._id) === JSON.stringify(frndID))
             if (sentEntry > -1)
-                currentUser.friend_sent.splice(sentEntry, 1)
+                currentUser.friends_recieved.splice(sentEntry, 1)
+
+            sentEntry = potentialFrnd.friends_sent.findIndex((user: any) => JSON.stringify(user.user._id) === JSON.stringify(currentUser._id))
+            if (sentEntry > -1)
+                potentialFrnd.friends_sent.splice(sentEntry, 1)
 
             const confirmMsg = 'Friend Request Accepted!'
-            await Promise.all([currentUser.save(), mail(confirmMsg, potentialFrnd.email, `Dear ${ potentialFrnd.username }, This is to inform you that ${ currentUser.username } has accepted your friend request.`)])
+            await Promise.all([
+                currentUser.save(),
+                potentialFrnd.save(),
+                mail(confirmMsg, potentialFrnd.email, `Dear ${ potentialFrnd.username }, This is to inform you that ${ currentUser.username } has accepted your friend request.`)]
+            )
 
             const recipientConnection = findConnection(frndID as string)
             if (recipientConnection?.socketID)

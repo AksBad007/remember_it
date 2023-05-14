@@ -1,5 +1,5 @@
 import type { GetServerSideProps } from 'next'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { getFriends } from '../lib/Helpers/db_helpers'
 import { decodeAuth } from '../lib/Helpers/backend_helpers'
@@ -9,8 +9,6 @@ import Modal from '../lib/Components/UI/Modal'
 import FriendComponent from '../lib/Components/custom/FriendComponent'
 import userImg from '../public/images/user-image.png'
 import styles from '../styles/Friends.module.css'
-import { SocketContext } from '../lib/Helpers/socket_helpers'
-import { useCookies } from 'react-cookie'
 
 let addedOffset = 0
 let requestsOffest = 0
@@ -22,8 +20,6 @@ interface RequestsModalProps {
 const RequestsModal = ({ reset }: RequestsModalProps) => {
     const [show, setShow] = useState(false)
     const [requestList, setRequestList] = useState<any[]>([])
-
-    console.log('requests =', requestList);
 
     const getRequests = useCallback(async () => {
         try {
@@ -37,7 +33,7 @@ const RequestsModal = ({ reset }: RequestsModalProps) => {
 
     const accept = async (userID: string) => {
         try {
-            const { msg } = await post_or_put_data('user/friends/accept' + userID)
+            const { msg } = await post_or_put_data('users/friends/accept/' + userID, null, false)
             toast.info(msg)
         } catch (error: any) {
             toast.error(error.message)
@@ -46,7 +42,7 @@ const RequestsModal = ({ reset }: RequestsModalProps) => {
 
     const reject = async (userID: string) => {
         try {
-            const { msg } = await request('user/reject' + userID, { method: 'DELETE' })
+            const { msg } = await request('users/reject/' + userID, { method: 'DELETE' })
             toast.info(msg)
         } catch (error: any) {
             toast.error(error.message)
@@ -59,7 +55,7 @@ const RequestsModal = ({ reset }: RequestsModalProps) => {
     }
 
     const body =
-        <>
+        <div id={ styles['friends-list'] }>
             {
                 requestList.length > 0 ?
                 requestList.map(({ _id, username }: any, idx) => (
@@ -79,7 +75,7 @@ const RequestsModal = ({ reset }: RequestsModalProps) => {
                 )) :
                 <div className={ styles['no-frnds-inside'] }>No Friend Request.</div>
             }
-        </>
+        </div>
 
     useEffect(() => {
         setShow(true)
@@ -92,16 +88,9 @@ const RequestsModal = ({ reset }: RequestsModalProps) => {
 }
 
 export default function Friends({ friendList }: { friendList: any[] }) {
-    const [cookies] = useCookies(['auth_token'])
     const [frndsOnly, setFrndsOnly] = useState(false)
     const [requestsModal, showRequestsModal] = useState(false)
     const [frndList, setFrndList] = useState(friendList)
-    const socket = useContext(SocketContext)
-
-    if (!socket.connected) {
-        socket.connect()
-        socket.emit('newLogin', cookies.auth_token)
-    }
 
     const searchUser = async (userQuery: string) => {
         const query = new URLSearchParams({ userQuery })
@@ -144,12 +133,6 @@ export default function Friends({ friendList }: { friendList: any[] }) {
             toast.error(error.message)
         }
     }
-
-    useEffect(() => {
-        console.log('list =', frndList)
-
-        socket.on('newRequest', (msg) => console.log('new Req =', msg))
-    }, [frndList])
 
     return (
         <>

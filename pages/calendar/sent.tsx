@@ -1,11 +1,8 @@
 import { GetServerSideProps } from 'next'
-import { useRouter } from 'next/router'
-import { useContext, useState } from 'react'
-import { useCookies } from 'react-cookie'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { getEvents, getUserInfo } from '../../lib/Helpers/db_helpers'
 import { EventListProps, redirectObj, request } from '../../lib/Helpers/frontend_helpers'
-import { SocketContext } from '../../lib/Helpers/socket_helpers'
 import Search from '../../lib/Components/UI/Search'
 import EventComponent from '../../lib/Components/custom/EventComponent'
 import CalendarCreationModal from '../../lib/Components/custom/CalendarCreationModal'
@@ -14,16 +11,31 @@ import styles from '../../styles/Event.module.css'
 let offset = 0
 
 export default function Sent({ userInfo, allEvents, totalEvents }: EventListProps) {
-    const router = useRouter()
-    const [cookies] = useCookies(['auth_token'])
     const [editModal, setEditModal] = useState(false)
     const [evt, setEvt] = useState<any>(null)
-    const socket = useContext(SocketContext)
+    const [eventList, setEventList] = useState(allEvents)
 
-    if (!socket.connected) {
-        socket.connect()
-        socket.emit('newLogin', cookies.auth_token)
+    const searchEvent = async (eventQuery: string) => {
+        const query = new URLSearchParams({ eventQuery })
+        try {
+            const { data } = await request('events/created/search?' + query)
+            setEventList(data.result)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
     }
+
+    const resetList = async () => {
+        offset = 0
+        const query = new URLSearchParams({ offset: String(offset) })
+        try {
+            const { data } = await request('events/created?' + query)
+            setEventList(data.data)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
 
     const edit = async (evtID: string) => {
         try {
@@ -65,7 +77,7 @@ export default function Sent({ userInfo, allEvents, totalEvents }: EventListProp
                 />
             }
             <div className='d-flex flex-column mt-2 align-items-center'>
-                <Search />
+                <Search onSearch={searchEvent} onClear={resetList}/>
                 {
                     totalEvents ?
                     <div id={ styles['events-list'] }>

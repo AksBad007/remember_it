@@ -55,8 +55,8 @@ export default function Login({ login=false }) {
         <label htmlFor='floatingPassword'>Password</label>
       </div>
       <div className='form-check mb-3'>
-        <label className='form-check-label cursor-pointer' htmlFor='remember'>
-          <input name='remember' className='form-check-input shadow-none' type='checkbox' id='remember' /> Remember Me
+        <label className='form-check-label cursor-pointer' htmlFor={ 'remember' + (login ? '0': '1') }>
+          <input className='form-check-input shadow-none' type='checkbox' id={ 'remember' + (login ? '0': '1') } /> Remember Me
         </label>
       </div>
       <button type='submit' className={`btn btn-primary ${styles['sign-btn']}`} disabled={btn}>

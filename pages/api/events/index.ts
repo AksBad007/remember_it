@@ -25,47 +25,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
                 link: Joi.string().optional().allow(''),
             })
                 .required(),
-            invited_users: Joi.array().items(
-                Joi.object().keys({ user: Joi.string().required })
-            )
+            invited_users: Joi.array()
+                .items(Joi.object().keys({ user: Joi.string().required() }))
                 .required()
-                .unique('user.user')
         })
 
         try {
             const newEvent = await EventSchema.validateAsync(body)
             const reqUser = await getUserInfo(req)
-            
-            newEvent.created_by = {
-                user: reqUser._id
-            }
+
+            newEvent.created_by = { user: reqUser._id }
 
             newEvent.invited_users.forEach((invitedUser: any) => invitedUser.status = 'pending')
 
             // checking and setting first reminder
             if (newEvent.reminder_status) {
-                if (newEvent.start_date > Date.now()) newEvent.next_reminder = newEvent.start_date - newEvent.notify * 1000
+                if (newEvent.start_date > Date.now()) newEvent.next_reminder = new Date(newEvent.start_date - newEvent.notify * 1000)
                 else {
                     const actualDate = new Date(newEvent.start_date).setFullYear(new Date().getFullYear(), new Date().getMonth())
                     switch (newEvent.repeat_status) {
                         case 1:
-                            actualDate < Date.now() ? newEvent.next_reminder = new Date(actualDate).setDate(new Date().getDate() + 1) : newEvent.next_reminder = actualDate
+                            newEvent.next_reminder = actualDate < Date.now() ? new Date(new Date(actualDate).setDate(new Date().getDate() + 1)) : new Date(actualDate)
                             break
                         case 2:
-                            newEvent.next_reminder = new Date(actualDate).setDate(new Date().getDate() + 7)
+                            newEvent.next_reminder = new Date(new Date(actualDate).setDate(new Date().getDate() + 7))
                             break
                         case 3:
-                            newEvent.next_reminder = new Date(actualDate).setMonth(new Date().getMonth() + 1)
+                            newEvent.next_reminder = new Date(new Date(actualDate).setMonth(new Date().getMonth() + 1))
                             break
                         case 4:
-                            newEvent.next_reminder = new Date(actualDate).setFullYear(new Date().getFullYear() + 1)
+                            newEvent.next_reminder = new Date(new Date(actualDate).setFullYear(new Date().getFullYear() + 1))
                             break
                         default:
-                            newEvent.next_reminder = newEvent.start_date - newEvent.notify * 1000
+                            newEvent.next_reminder = new Date(newEvent.start_date - newEvent.notify * 1000)
                             break
                     }
-        
-                    newEvent.next_reminder = newEvent.next_reminder - newEvent.notify * 1000
+
+                    newEvent.next_reminder = new Date(newEvent.next_reminder - newEvent.notify * 1000)
                 }
             }
 
@@ -75,11 +71,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             // Send notifications
             let onlineUsers: string[] = []
             invited_users.forEach((invitedUser: any) => {
-                let reqSocket = findConnection(invitedUser.user._id)
+                let reqSocket = global.connectedUsers.find(connection => JSON.stringify(connection.userID) === JSON.stringify(invitedUser.user._id))
                 if (reqSocket)
                     onlineUsers.push(reqSocket.socketID as string)
             })
-            res.socket.server.io.in(onlineUsers).emit('newEvt', result)
+
+            if (onlineUsers.length)
+                res.socket.server.io.in(onlineUsers).emit('newEvt', result)
 
             // Send Mails
             const mailList = invited_users.map((user: any) => user.user.email)

@@ -1,36 +1,43 @@
 import { GetServerSideProps } from 'next'
-import { useRouter } from 'next/router'
-import { useCookies } from 'react-cookie'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { decodeAuth } from '../../lib/Helpers/backend_helpers'
 import { getEvents } from '../../lib/Helpers/db_helpers'
-import { SocketContext } from '../../lib/Helpers/socket_helpers'
-import { EventListProps, post_or_put_data, redirectObj } from '../../lib/Helpers/frontend_helpers'
+import { EventListProps, post_or_put_data, redirectObj, request } from '../../lib/Helpers/frontend_helpers'
 import Search from '../../lib/Components/UI/Search'
 import EventComponent from '../../lib/Components/custom/EventComponent'
 import styles from '../../styles/Event.module.css'
-import { useContext } from 'react'
 
 let offset = 0
 
 export default function Received({ allEvents, totalEvents }: EventListProps) {
-    const router = useRouter()
-    const [cookies] = useCookies(['auth_token'])
-    const socket = useContext(SocketContext)
+    const [eventList, setEventList] = useState(allEvents)
 
-    if (!socket.connected) {
-        socket.connect()
-        socket.emit('newLogin', cookies.auth_token)
+    const searchEvent = async (eventQuery: string) => {
+        const query = new URLSearchParams({ eventQuery })
+        try {
+            const { data } = await request('events/received/search?' + query)
+            setEventList(data.result)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
     }
 
-    console.log('connected with', socket.id)
+    const resetList = async () => {
+        offset = 0
+        const query = new URLSearchParams({ offset: String(offset) })
+        try {
+            const { data } = await request('events/received?' + query)
+            setEventList(data.data)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
 
     const accept = async (evtID: string) => {
         try {
-            let res = await post_or_put_data('/events/received/accept/' + evtID, null, false)
-            res = res.data
-
-            toast.success(res.msg)
+            let { msg } = await post_or_put_data('/events/received/accept/' + evtID, null, false)
+            toast.success(msg)
         } catch (error: any) {
             toast.error(error.message)
         }
@@ -38,10 +45,8 @@ export default function Received({ allEvents, totalEvents }: EventListProps) {
 
     const reject = async (evtID: string) => {
         try {
-            let res = await post_or_put_data('/events/received/reject/' + evtID, null, false)
-            res = res.data
-
-            toast.success(res.msg)
+            let { msg } = await post_or_put_data('/events/received/reject/' + evtID, null, false)
+            toast.success(msg)
         } catch (error: any) {
             toast.error(error.message)
         }
@@ -49,9 +54,9 @@ export default function Received({ allEvents, totalEvents }: EventListProps) {
 
     return (
         <div className='d-flex flex-column mt-2 align-items-center'>
-            <Search />
+            <Search onSearch={searchEvent} onClear={resetList} />
             {
-                totalEvents ?
+                eventList.length > 0 ?
                 <div id={ styles['events-list'] }>
                     {
                         allEvents.map((evt, id) => (

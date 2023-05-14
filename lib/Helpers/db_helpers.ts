@@ -42,7 +42,7 @@ export default async function dbConnect() {
 export const getUserInfo = async (req: any) => {
   await dbConnect()
   const userID = await decodeAuth(req.cookies.auth_token)
-  const data = await Users.findById(userID)
+  const data = await Users.findById(userID).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
 
   if (data)
     return data
@@ -67,6 +67,18 @@ export const searchUsers = async (query: string | string[], userID?: any) => {
   }
 
   return await Users.find(filter, '_id username email').limit(global.limit)
+}
+
+export const searchEvents = async (query: string | string[], userID: any, sent=false)  => {
+  await dbConnect()
+  const filter: QueryFilter = { title: query }
+
+  if (sent)
+    filter['created_by.user'] = userID
+  else
+    filter['invited_users.user'] = userID
+
+  return await Events.find(filter).populate('created_by.user invited_users.user', 'email username')
 }
 
 export const getFriends = async (count: number, userID: any) => {
@@ -118,7 +130,7 @@ export const respond = async (evtID: string, userID: string, status: string) => 
   const reqUser = reqEvt.invited_users.find((user: any) => JSON.stringify(user.user._id) === JSON.stringify(userID))
 
   reqUser.status = status
-  const { title, created_by: { userID: { username, email } } } = await reqEvt.save()
+  const { title, created_by: { user: { username, email } } } = await reqEvt.save()
 
   const msg = `Dear ${ username }, This is to inform you that ${ reqUser.user.username } has accepted the Event - ${ title } created by you.`
   const confirmMsg = 'Event ' + status.charAt(0).toUpperCase() + status.slice(1) + '!'

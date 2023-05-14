@@ -22,7 +22,7 @@ export const raiseNotFound = (res: NextApiResponse | NextApiResponseServerIO, er
 
 export const raiseError = (res: NextApiResponse | NextApiResponseServerIO, error: string='Oops! Something Went Wrong.') => res.status(409).json({ error })
 
-export const raiseUnauthorized = (res: NextApiResponse | NextApiResponseServerIO, error: string='Unauthrized Access.') => res.status(401).json({ error })
+export const raiseUnauthorized = (res: NextApiResponse | NextApiResponseServerIO, error: string='Unauthorized Access.') => res.status(401).json({ error })
 
 export const raiseSuccess = (res: NextApiResponse | NextApiResponseServerIO, data: { msg: string, data: unknown }) => res.status(200).json({ data })
 

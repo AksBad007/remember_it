@@ -11,8 +11,6 @@ const CalendarComponent = dynamic(
 )
 
 export default function Calendar({ user }: any) {
-    const socket = useContext(SocketContext)
-    console.log('connected with', socket.id)
     return <CalendarComponent userInfo={ user } />
 }
 

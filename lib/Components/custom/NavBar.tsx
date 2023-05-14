@@ -82,11 +82,11 @@ export default function NavBar({ showSide=true }) {
                     </ul>
                     <hr />
 
-                    <div onClick={ toggleBar } className={ styles['nav-text'] }>
+                    {/* <div onClick={ toggleBar } className={ styles['nav-text'] }>
                         <Link href='/settings'>
                             <IoMdSettings /> <span>Settings</span>
                         </Link>
-                    </div>
+                    </div> */}
                 </nav>
             }
         </IconContext.Provider>

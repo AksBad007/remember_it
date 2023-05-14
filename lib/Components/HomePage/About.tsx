@@ -14,15 +14,10 @@ export default function About() {
       </div>
       <div className={ styles['about-section-text-container'] }>
         <h1 className={ styles['primary-heading'] }>
-          Management Made Easy
+          More Than Just A Calendar
         </h1>
         <p className={ styles['primary-text'] }>
-          Lorem ipsum dolor sit amet consectetur. Non tincidunt magna non et
-          elit. Dolor turpis molestie dui magnis facilisis at fringilla quam.
-        </p>
-        <p className={ styles['primary-text'] }>
-          Non tincidunt magna non et elit. Dolor turpis molestie dui magnis
-          facilisis at fringilla quam.
+          It makes management super easy as it allows adding users, custom invites, timely reminders and so much more.
         </p>
       </div>
     </div>

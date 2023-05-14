@@ -18,8 +18,7 @@ export default function Home() {
             Remember It!
           </h1>
           <p className={ styles['primary-text'] }>
-            Healthy switcher chefs do all the prep work, like peeding, chopping
-            & marinating, so you can cook a fresh food.
+            A super simple time management app, made you assist you in daily scheduling.
           </p>
           <Link href='/auth' className='btn btn-lg btn-primary'>
             Get Started <FiArrowRight />

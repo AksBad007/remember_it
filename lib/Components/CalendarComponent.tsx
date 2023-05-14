@@ -1,19 +1,15 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import Calendar from '@toast-ui/react-calendar'
 import { toast } from 'react-toastify'
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import Calendar from '@toast-ui/react-calendar'
 import { ISchedule } from 'tui-calendar'
 import SlimSelect from 'slim-select'
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import CalendarCreationModal from './custom/CalendarCreationModal'
 import { request, createSchedule } from '../Helpers/frontend_helpers'
 import 'tui-calendar/dist/tui-calendar.css'
 import styles from '../../styles/Calendar.module.css'
 
-interface CalendarProps {
-    userInfo: any
-}
-
-export default function CalendarComponent({ userInfo }: CalendarProps) {
+export default function CalendarComponent({ userInfo }: any) {
     const calendarRef = useRef<any>(null)
     const [creationModal, setCreationModal] = useState(false)
     const [currentRange, setCurrentRange] = useState('')

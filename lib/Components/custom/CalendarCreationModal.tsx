@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import SlimSelect from 'slim-select'
 import DatePicker from 'react-datepicker'
 import Modal from '../UI/Modal'
-import { handleSubmit, post_or_put_data, createSchedule } from '../../Helpers/frontend_helpers'
+import { handleSubmit, post_or_put_data, createSchedule, getSelectValues } from '../../Helpers/frontend_helpers'
 import { toast } from 'react-toastify'
 import 'react-datepicker/dist/react-datepicker.css'
 import styles from '../../../styles/Calendar.module.css'
@@ -23,12 +23,12 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
     const [show, setShow] = useState(false) // for fade effect
     const [evtStart, setEvtStart] = useState(evtDates.start)
     const [evtEnd, setEvtEnd] = useState(evtDates.end)
-    const [userList, setUserList] = useState<any[]>([])
+    const userList: any[] = userInfo.friends_added
 
     const createEvtBody = (body: { [k: string]: FormDataEntryValue }) => {
         let newEvt: any = { ...body }
 
-        newEvt.invited_users = !newEvt.invited_users ? [] : newEvt.invited_users.map((userID: string) => ({ userID: userID}))
+        newEvt.invited_users = getSelectValues(document.querySelector('#evt-users') as HTMLSelectElement).map(userID => ({ user: userID }))
         newEvt.location = {
             description: newEvt.location_description,
             link: location === 'Online' ? newEvt.location_link : ''
@@ -142,7 +142,16 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
                     <option data-placeholder='true' value=''> No Users Selected </option>
                     {
                         userList.map((user, idx) => (
-                            <option key={ idx } value={ user._id }>{ user.user_name }</option>
+                            <option
+                                key={ idx }
+                                value={ user.user._id }
+                                selected={
+                                    evt &&
+                                    evt.invited_users.find((invited_user: any) => invited_user.user === user.user._id)
+                                }
+                            >
+                                { user.user.username }
+                            </option>
                         ))
                     }
                 </select>

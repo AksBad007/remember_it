@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import styles from '../../styles/Collapse.module.css'
+import styles from '../../../styles/Collapse.module.css'
 
 interface CollapseProps {
     fullscreen: boolean

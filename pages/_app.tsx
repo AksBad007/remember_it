@@ -3,9 +3,9 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { CookiesProvider, useCookies } from 'react-cookie'
+import { ToastContainer } from 'react-toastify'
 import { socket, SocketContext } from '../lib/Helpers/socket_helpers'
 import NavBar from '../lib/Components/custom/NavBar'
-import StaticComponents from '../lib/Components/StaticComponents'
 import 'react-toastify/dist/ReactToastify.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import '../styles/slimselect.min.css'
@@ -19,7 +19,6 @@ export default function App({ Component, pageProps }: AppProps) {
   const mainPage = mainPages.findIndex(page => currentPath === page)
 
   useEffect(() => {
-    console.log('up effect')
     let auth_token = localStorage.getItem('auth_token')
 
     if (auth_token)
@@ -49,8 +48,13 @@ export default function App({ Component, pageProps }: AppProps) {
           <Component {...pageProps} />
         </main>
 
-
-        <StaticComponents />
+        <ToastContainer
+          position='top-right'
+          hideProgressBar
+          newestOnTop
+          pauseOnFocusLoss
+          theme='colored'
+        />
       </SocketContext.Provider>
     </CookiesProvider>
   )

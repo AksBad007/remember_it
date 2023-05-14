@@ -1,5 +1,5 @@
 import type { NextApiRequest } from 'next'
-import { raiseError, raiseNotFound, raiseSuccess } from '../../../../lib/Helpers/backend_helpers'
+import { raiseError, raiseNotFound, raiseSuccess, raiseUnauthorized } from '../../../../lib/Helpers/backend_helpers'
 import { findConnection, NextApiResponseServerIO } from '../../../../lib/Helpers/socket_helpers'
 import mail from '../../../../lib/Helpers/mail_helpers'
 import dbConnect from '../../../../lib/Helpers/db_helpers'
@@ -13,19 +13,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
         try {
             const currentUser = await Users.findById(userid).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
             const potentialFrnd = await Users.findById(frndID).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
+            const { username, email, friends_recieved } = potentialFrnd
 
-            let alreadyAdded = currentUser.friends_sent.findIndex((user: any) => JSON.stringify(user.user._id) === frndID)
+            let alreadyAdded = currentUser.friends_sent.findIndex((user: any) => user.user.username == username)
             if (alreadyAdded > -1)
                 currentUser.friends_sent.splice(alreadyAdded, 1)
 
-            alreadyAdded = potentialFrnd.friends_recieved.findIndex((user: any) => JSON.stringify(user.user._id) === frndID)
+            alreadyAdded = potentialFrnd.friends_recieved.findIndex((user: any) => user.user.username == username)
             if (alreadyAdded > -1)
                 potentialFrnd.friends_recieved.splice(alreadyAdded, 1)
+
+            alreadyAdded = potentialFrnd.friends_added.findIndex((user: any) => user.user.username == username)
+            if (alreadyAdded > -1)
+                return raiseUnauthorized(res, 'You are already friends with ' + username)
 
             currentUser.friends_sent.push({ user: frndID })
             potentialFrnd.friends_recieved.push({ user: userid })
 
-            const { username, email, friends_recieved } = potentialFrnd
             await Promise.all([
                 currentUser.save(),
                 potentialFrnd.save(),

@@ -1,7 +1,7 @@
 import type { NextApiRequest } from 'next'
 import Joi from 'joi'
-import { raiseNotFound, raiseError, raiseSuccess } from '../../../lib/Helpers/backend_helpers'
-import { findConnection, NextApiResponseServerIO } from '../../../lib/Helpers/socket_helpers'
+import type { NextApiResponseServerIO } from '../../../lib/Helpers/socket_helpers'
+import { raiseNotFound, raiseError, raiseSuccess, calculateNextReminder } from '../../../lib/Helpers/backend_helpers'
 import mail from '../../../lib/Helpers/mail_helpers'
 import dbConnect, { getUserInfo } from '../../../lib/Helpers/db_helpers'
 import Events from '../../../lib/Models/Event.model'
@@ -35,38 +35,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             const reqUser = await getUserInfo(req)
 
             newEvent.created_by = { user: reqUser._id }
-
             newEvent.invited_users.forEach((invitedUser: any) => invitedUser.status = 'pending')
-
-            // checking and setting first reminder
-            if (newEvent.reminder_status) {
-                if (newEvent.start_date > Date.now()) newEvent.next_reminder = new Date(newEvent.start_date - newEvent.notify * 1000)
-                else {
-                    const actualDate = new Date(newEvent.start_date).setFullYear(new Date().getFullYear(), new Date().getMonth())
-                    switch (newEvent.repeat_status) {
-                        case 1:
-                            newEvent.next_reminder = actualDate < Date.now() ? new Date(new Date(actualDate).setDate(new Date().getDate() + 1)) : new Date(actualDate)
-                            break
-                        case 2:
-                            newEvent.next_reminder = new Date(new Date(actualDate).setDate(new Date().getDate() + 7))
-                            break
-                        case 3:
-                            newEvent.next_reminder = new Date(new Date(actualDate).setMonth(new Date().getMonth() + 1))
-                            break
-                        case 4:
-                            newEvent.next_reminder = new Date(new Date(actualDate).setFullYear(new Date().getFullYear() + 1))
-                            break
-                        default:
-                            newEvent.next_reminder = new Date(newEvent.start_date - newEvent.notify * 1000)
-                            break
-                    }
-
-                    newEvent.next_reminder = new Date(newEvent.next_reminder - newEvent.notify * 1000)
-                }
-            }
+            newEvent.next_reminder = calculateNextReminder(newEvent)
 
             const result = await new Events(newEvent).save()
-            const { title, created_by, invited_users } = result
+            const { title, created_by: { user: { username } }, invited_users } = result
 
             // Send notifications
             let onlineUsers: string[] = []
@@ -76,16 +49,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
                     onlineUsers.push(reqSocket.socketID as string)
             })
 
-            if (onlineUsers.length)
+            if (onlineUsers.length) {
+                res.socket.server.io.in(onlineUsers).emit('notify', `${username} invited you to Event: ${title}.`)
                 res.socket.server.io.in(onlineUsers).emit('newEvt', result)
+            }
 
             // Send Mails
             const mailList = invited_users.map((user: any) => user.user.email)
             const confirmMsg = 'Event Created Successfully!'
             const msg = `
                 Dear User,
-                    This is to inform you that you have been invited to the Event - ${ title } by ${ created_by.user.username }.
-                    You can either accept it or reject it by going to ${ process.env.BASE_URL }/events/recieved.
+                    This is to inform you that you have been invited to the Event - ${ title } by ${ username }.
+                    You can either accept it or reject it by going to ${ process.env.BASE_URL }/events/received.
             `
             await mail(confirmMsg, mailList, msg)
 

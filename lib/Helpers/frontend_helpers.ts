@@ -1,3 +1,4 @@
+import type { SetStateAction } from 'react'
 import { ISchedule } from 'tui-calendar'
 
 //Interfaces
@@ -9,7 +10,7 @@ interface InvitedUser {
 }
 
 export interface EventListProps {
-    userInfo?: any
+    userInfo: any
     allEvents: any[]
     totalEvents: number
 }
@@ -48,9 +49,8 @@ export const post_or_put_data = async (url: string, body?: any, post=true) => {
     return req
 }
 
-// Return Event Body
+// Event Related Methods
 export const createSchedule = (evt: any, userInfo: any) => {
-    console.log(evt, userInfo)
     let newEvent: ISchedule = {
         calendarId: '1',
         category: 'time',
@@ -98,3 +98,7 @@ export const getSelectValues = (select: HTMLSelectElement) => {
 
     return result;
 }
+
+export const onNewEvt = (evt: any, calendarInstance: any, userInfo: any) => calendarInstance.createSchedules([createSchedule(evt, userInfo)])
+
+export const onUpdateEvt = (evt: any, calendarInstance: any, userInfo: any) => calendarInstance.updateSchedule(evt._id, '1', [createSchedule(evt, userInfo)], false)

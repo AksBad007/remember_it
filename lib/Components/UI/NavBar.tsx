@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { IconContext } from 'react-icons'
 import { FaUserFriends, FaBars, FaChevronLeft, FaPowerOff } from 'react-icons/fa'
 import { IoSend } from 'react-icons/io5'
-import { IoMdSettings } from 'react-icons/io'
+// import { IoMdSettings } from 'react-icons/io'
 import { AiFillHome } from 'react-icons/ai'
 import { MdOutlineCallReceived } from 'react-icons/md'
 import styles from '../../../styles/NavBar.module.css'
@@ -19,12 +19,12 @@ export default function NavBar({ showSide=true }) {
         },
         {
             title: 'Received',
-            path: '/calendar/received',
+            path: '/received',
             icon: <MdOutlineCallReceived />
         },
         {
             title: 'Sent',
-            path: '/calendar/sent',
+            path: '/sent',
             icon: <IoSend />
         },
         {

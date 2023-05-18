@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router'
 import { useContext, useEffect } from 'react'
 import { useCookies } from 'react-cookie'
-import Loader from '../lib/Components/UI/Loader'
 import { SocketContext } from '../lib/Helpers/socket_helpers'
+import Loader from '../lib/Components/UI/Loader'
 
 export default function Logout() {
     const [cookies, _setCookie, removeCookie] = useCookies(['auth_token'])

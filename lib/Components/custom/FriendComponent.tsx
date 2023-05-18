@@ -21,7 +21,7 @@ interface FriendsProps {
 export default function FriendComponent({ user: { username, userImg }, request=false, condition, onTrue, onFalse}: FriendsProps) {
   return (
     <div className='shadow'>
-        <div className={ styles['frnd-user-main'] }>
+        <div className={ condition ? `p-2 ${ styles['frnd-user-main'] }` : `p-4 ${ styles['frnd-user-main'] }` }>
             <Image className='p-2' src={ userImg } alt='User Image' width={ 150 } height={ 150 } />
 
             <div className={ styles['frnd-username'] }>
@@ -30,12 +30,12 @@ export default function FriendComponent({ user: { username, userImg }, request=f
                 {
                     !request ? 
                         condition ?
-                        <button className='btn btn-danger' onClick={ onTrue?.fn }>{ onTrue?.prompt }</button> :
-                        <button className='btn btn-primary' onClick={ onFalse?.fn }>{ onFalse?.prompt }</button> :
-                    <>
-                        <button className='btn btn-danger' onClick={ onTrue?.fn }>{ onTrue?.prompt }</button>
-                        <button className='btn btn-primary' onClick={ onFalse?.fn }>{ onFalse?.prompt }</button>
-                    </>
+                            <button className='btn btn-danger' onClick={ onTrue?.fn }>{ onTrue?.prompt }</button> :
+                            <button className='btn btn-primary' onClick={ onFalse?.fn }>{ onFalse?.prompt }</button> :
+                        <>
+                            <button className='btn btn-danger' onClick={ onTrue?.fn }>{ onTrue?.prompt }</button>
+                            <button className='btn btn-primary' onClick={ onFalse?.fn }>{ onFalse?.prompt }</button>
+                        </>
                 }
             </div>
         </div>

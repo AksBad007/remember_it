@@ -20,21 +20,7 @@ const socketIO = SocketIOClient(process.env.BASE_URL as string, { path: '/api/so
 // Socket Events
 socketIO.on('connect', () => console.log('connected with', socketIO.id))
 
-socketIO.on('newEvt', (evt: any) => {
-    const { title, created_by: { user: { username } } } = evt
-    toast.info(`${username} invited you to Event: ${title}.`)
-})
-
-socketIO.on('evtEdited', (evt: any) => {
-    const { title, created_by: { user: { username } } } = evt
-    toast.info(`Event: ${title} has been edited by ${username}.`)
-})
-
-socketIO.on('newRequest', (msg) => toast.info(msg))
-
-socketIO.on('requestAccepted', (msg: string) => toast.info(msg))
-
-socketIO.on('reminder', (msg: string) => toast.info(msg))
+socketIO.on('notify', (msg: string) => toast.info(msg))
 
 socketIO.on('disconnect', () => console.log('disconnected.'))
 

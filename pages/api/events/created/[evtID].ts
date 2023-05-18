@@ -12,8 +12,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
     // Delete a Created Event
     if (method === 'DELETE')
         try {
-            const { title, created_by, invited_users } = await Events.findByIdAndDelete(evtID).populate('created_by.user invited_users.user', 'email username')
+            const { _id, title, created_by, invited_users } = await Events.findByIdAndDelete(evtID).populate('created_by.user invited_users.user', 'email username')
 
+            // Send notifications
+            let onlineUsers: string[] = []
+            invited_users.forEach((invitedUser: any) => {
+                let reqSocket = global.connectedUsers.find(connection => JSON.stringify(connection.userID) === JSON.stringify(invitedUser.user._id))
+                if (reqSocket)
+                    onlineUsers.push(reqSocket.socketID as string)
+            })
+
+            if (onlineUsers.length)
+                res.socket.server.io.in(onlineUsers).emit('evtDel', _id)
+
+            // Send Mails
             const mailList = invited_users.map((user: any) => user.user.email)
             const msg = `Dear User, This is to inform you that the Event - ${title} has been cancelled by its creator, ${ created_by.user.username }.`
             const confirmMsg = 'Event Cancelled!'

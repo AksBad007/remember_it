@@ -1,10 +1,11 @@
 import type { NextApiRequest } from 'next'
 import Joi from 'joi'
-import { raiseNotFound, raiseError, raiseSuccess } from '../../../lib/Helpers/backend_helpers'
-import { NextApiResponseServerIO } from '../../../lib/Helpers/socket_helpers'
+import type { NextApiResponseServerIO } from '../../../lib/Helpers/socket_helpers'
+import { raiseNotFound, raiseError, raiseSuccess, calculateNextReminder } from '../../../lib/Helpers/backend_helpers'
 import dbConnect from '../../../lib/Helpers/db_helpers'
 import mail from '../../../lib/Helpers/mail_helpers'
 import Events from '../../../lib/Models/Event.model'
+import Users from '../../../lib/Models/User.model'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
     await dbConnect()
@@ -49,75 +50,103 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
                 const newEvent = await EventSchema.validateAsync(body)
                 const reqEvent = await Events.findById(evtID).populate('created_by.user invited_users.user', 'email username')
 
-                Object.keys(newEvent).forEach(key => reqEvent[key] = newEvent[key])
+                Object.keys(newEvent).forEach(key => {
+                    // Only update below fields
+                    if (['title', 'description'].includes(key))
+                        reqEvent[key] = newEvent[key]
+                })
 
-                let change = false, newUserList: any[] = newEvent.invited_users
-                if (newUserList === reqEvent.invited_users) change = false
-                else for (let i = 0; i < newUserList.length; i++)
-                    if (!reqEvent.invited_users.find((oldUser: any) => JSON.stringify(oldUser.user) === JSON.stringify(newUserList[i].user))) {
-                        change = true
-                        break
-                    }
+                // To detect modifications in Members List
+                let newUsers: any[] = [],
+                    removedUsers: any[] = [],
+                    sameUsers: any[] = []
 
-                let removedUsers = reqEvent.invited_users.filter((oldUser: any) => !reqEvent.invited_users.some((newUser: any) => JSON.stringify(oldUser.user._id) === JSON.stringify(newUser.user._id)))
-                let msg = `Dear User, This is to inform you that theb details of Event - ${reqEvent.title} held on ${new Date(reqEvent.start_date)} have been edited by ${reqEvent.created_by.user.username}.`
+                for (let i = 0; i < newEvent.invited_users.length; i++) {
+                    const newUser = newEvent.invited_users[i]
+                    let sameUser = reqEvent.invited_users.find((oldUser: any) => JSON.stringify(oldUser.user._id) === JSON.stringify(newUser.user))
 
-                if (change || newEvent.start_date !== reqEvent.start_date || newEvent.end_date !== reqEvent.end_date || newEvent.location.description !== reqEvent.location.description || newEvent.location.link !== reqEvent.location.link) {
+                    if (sameUser)
+                        sameUsers.push(sameUser.user)
+                    else
+                        newUsers.push(await Users.findById(newUser.user, 'email username'))
+                }
+
+                reqEvent.invited_users.forEach((oldUser: any) => {
+                    if (!newEvent.invited_users.find((newUser: any) => JSON.stringify(newUser.user) === JSON.stringify(oldUser.user._id)))
+                        removedUsers.push(oldUser.user)
+                })
+
+                let msg = `Dear User, This is to inform you that theb details of Event - ${reqEvent.title} held on ${new Date(reqEvent.start_date)} have been updated by ${reqEvent.created_by.user.username}.`
+
+                // If critical information is changed, every member must respond again
+                if (newEvent.start_date !== reqEvent.start_date || newEvent.end_date !== reqEvent.end_date || newEvent.location.link !== reqEvent.location.link) {
+                    reqEvent.invited_users = newEvent.invited_users
                     reqEvent.invited_users.forEach((user: any) => user.status = 'pending')
+                    newEvent.location = reqEvent.location
                     msg += 'Please accept or reject it again.'
                 }
 
+                // If any reminder dependency is modified, calculate reminders again
                 if (newEvent.start_date !== reqEvent.start_date || newEvent.notify !== reqEvent.notify || newEvent.repeat_status !== reqEvent.repeat_status) {
-                    if (newEvent.reminder_status) {
-                        let actualDate = new Date(newEvent.start_date).setFullYear(new Date().getFullYear(), new Date().getMonth()) - newEvent.notify * 1000
-                        if (newEvent.start_date !== reqEvent.start_date) reqEvent.next_reminder = new Date(newEvent.start_date - newEvent.notify * 1000)
+                    reqEvent.next_reminder = calculateNextReminder(newEvent)
+                    if (!reqEvent.next_reminder) {
+                        reqEvent.reminder_status = false
+                    }
 
-                        switch (newEvent.repeat_status) {
-                            case 1:
-                                newEvent.next_reminder = actualDate < Date.now() ? new Date(new Date(actualDate).setDate(new Date().getDate() + 1)) : new Date(actualDate)
-                                break
-                            case 2:
-                                reqEvent.next_reminder = new Date(new Date(actualDate).setDate(new Date().getDate() + 7))
-                                break
-                            case 3:
-                                reqEvent.next_reminder = new Date(new Date(actualDate).setMonth(new Date().getMonth() + 1))
-                                break
-                            case 4:
-                                reqEvent.next_reminder = new Date(new Date(actualDate).setFullYear(new Date().getFullYear() + 1))
-                                break
-                            default:
-                                newEvent.next_reminder = new Date(newEvent.start_date - newEvent.notify * 1000)
-                                break
-                        }
-
-                        reqEvent.next_reminder = new Date(reqEvent.next_reminder + (reqEvent.notify - newEvent.notify) * 1000)
-                    } else
-                        newEvent.reminder_status = false
+                    ['start_date', 'end_date', 'notify', 'repeat_status'].forEach(key => reqEvent[key] = newEvent[key])
                 }
 
                 const result = await reqEvent.save()
-                const { invited_users } = result
+                const { _id, title, created_by: { user: { username } } } = result
+                const confirmMsg = 'Event updated!'
 
                 // Send notifications
-                let onlineUsers: string[] = []
-                invited_users.forEach((invitedUser: any) => {
-                    let reqSocket = global.connectedUsers.find(connection => JSON.stringify(connection.userID) === JSON.stringify(invitedUser.user._id))
+                let onlineUsers: string[] = [],
+                mailList = sameUsers.map(({ email }: any) => email)
+                sameUsers.forEach(({ _id }: any) => {
+                    let reqSocket = global.connectedUsers.find(connection => JSON.stringify(connection.userID) === JSON.stringify(_id))
                     if (reqSocket)
                         onlineUsers.push(reqSocket.socketID as string)
                 })
+                if (onlineUsers.length) {
+                    res.socket.server.io.in(onlineUsers).emit('notify', `Event: ${ title } has been updated by ${ username }.`)
+                    res.socket.server.io.in(onlineUsers).emit('evtUpdate', result)
+                }
+                if (mailList.length)
+                    await mail(confirmMsg, mailList, msg)
 
+                onlineUsers = []
+                mailList = newUsers.map(({ email }: any) => email)
+                newUsers.forEach(({ _id }: any) => {
+                    let reqSocket = global.connectedUsers.find(connection => JSON.stringify(connection.userID) === JSON.stringify(_id))
+                    if (reqSocket)
+                        onlineUsers.push(reqSocket.socketID as string)
+                })
+                if (onlineUsers.length) {
+                    res.socket.server.io.in(onlineUsers).emit('notify', `${username} invited you to Event: ${title}.`)
+                    res.socket.server.io.in(onlineUsers).emit('newEvt', result)
+                }
+                if (mailList.length) {
+                    msg = `
+                        Dear User,
+                            This is to inform you that you have been invited to the Event - ${ title } by ${ username }.
+                            You can either accept it or reject it by going to ${ process.env.BASE_URL }/events/received.
+                    `
+                    await mail(confirmMsg, mailList, msg)
+                }
+
+                onlineUsers = []
+                mailList = removedUsers.map(({ email }: any) => email)
+                removedUsers.forEach(({ _id }: any) => {
+                    let reqSocket = global.connectedUsers.find(connection => JSON.stringify(connection.userID) === JSON.stringify(_id))
+                    if (reqSocket)
+                        onlineUsers.push(reqSocket.socketID as string)
+                })
                 if (onlineUsers.length)
-                    res.socket.server.io.in(onlineUsers).emit('evtEdit', result)
-
-                // Send Mails
-                const mailList = invited_users.map((user: any) => user.user.email)
-                const confirmMsg = 'Event Edited!'
-                await mail(confirmMsg, mailList, msg)
-
-                if (removedUsers) {
-                    const removedMailList = removedUsers.map((user: any) => user.user.email)
-                    msg = `Dear User, This is to inform you that you have been removed from the Event - ${reqEvent.title}.`
-                    await mail(confirmMsg, removedMailList, msg)
+                    res.socket.server.io.in(onlineUsers).emit('evtDel', _id)
+                if (mailList.length) {
+                    msg = `Dear User, This is to inform you that you have been removed from the Event: ${ reqEvent.title }.`
+                    await mail(confirmMsg, mailList, msg)
                 }
 
                 return raiseSuccess(res, { msg: confirmMsg, data: result })

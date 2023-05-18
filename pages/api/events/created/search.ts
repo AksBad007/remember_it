@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (method === 'GET')
         try {
-            let result = await searchEvents(eventQuery, userid, true)
+            let result = await searchEvents(eventQuery, userid as string, true)
 
             return raiseSuccess(res, { msg: 'Events Found.', data: { result } })
         } catch (error) {

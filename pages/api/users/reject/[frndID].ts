@@ -10,15 +10,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 
     if (method === 'DELETE')
         try {
-            const currentUser = await Users.findById(userid).populate('created_by.user invited_users.user', 'email username')
+            const currentUser = await Users.findById(userid).populate('friends_received.user friends_sent.user', 'email username')
             const potentialFrnd = await Users.findById(frndID)
 
             if (!potentialFrnd)
                 return raiseNotFound(res, 'User does not Exist.')
 
-            const sentEntry = currentUser.friend_sent.findIndex((user: any) => JSON.stringify(user.user._id) === frndID)
+            const sentEntry = currentUser.friends_sent.findIndex((user: any) => JSON.stringify(user.user._id) === frndID)
             if (sentEntry > -1)
-                currentUser.friends_recieved.splice(sentEntry, 1)
+                currentUser.friends_received.splice(sentEntry, 1)
 
             await currentUser.save()
 

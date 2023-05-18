@@ -6,10 +6,10 @@ interface ModalProps {
     closeOption?: boolean
     closeModal?: () => void
     title: string
-    body: JSX.Element
+    children: JSX.Element
 }
 
-export default function Modal({ bg, closeOption=false, closeModal, title, body }: ModalProps) {
+export default function Modal({ bg, closeOption=false, closeModal, title, children }: ModalProps) {
     return (
         <div className={ bg ? `${styles['modal-background']} ${styles['show']}` : `${styles['modal-background']}`}>
             <div className={ styles['modal-container'] }>
@@ -18,7 +18,7 @@ export default function Modal({ bg, closeOption=false, closeModal, title, body }
                     <h2>{ title }</h2>
                 </div>
                 <div className={ styles['modal-body'] }>
-                    { body }
+                    { children }
                 </div>
             </div>
         </div>

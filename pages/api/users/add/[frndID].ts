@@ -11,34 +11,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 
     if (method === 'POST')
         try {
-            const currentUser = await Users.findById(userid).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
-            const potentialFrnd = await Users.findById(frndID).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
-            const { username, email, friends_recieved } = potentialFrnd
+            const currentUser = await Users.findById(userid).populate('friends_sent.user', 'email username')
+            const potentialFrnd = await Users.findById(frndID).populate('friends_added.user friends_received.user', 'email username')
+            const { username, email, friends_received } = potentialFrnd
 
             let alreadyAdded = currentUser.friends_sent.findIndex((user: any) => user.user.username == username)
             if (alreadyAdded > -1)
                 currentUser.friends_sent.splice(alreadyAdded, 1)
 
-            alreadyAdded = potentialFrnd.friends_recieved.findIndex((user: any) => user.user.username == username)
+            alreadyAdded = potentialFrnd.friends_received.findIndex((user: any) => user.user.username == username)
             if (alreadyAdded > -1)
-                potentialFrnd.friends_recieved.splice(alreadyAdded, 1)
+                potentialFrnd.friends_received.splice(alreadyAdded, 1)
 
             alreadyAdded = potentialFrnd.friends_added.findIndex((user: any) => user.user.username == username)
             if (alreadyAdded > -1)
                 return raiseUnauthorized(res, 'You are already friends with ' + username)
 
             currentUser.friends_sent.push({ user: frndID })
-            potentialFrnd.friends_recieved.push({ user: userid })
+            potentialFrnd.friends_received.push({ user: userid })
 
             await Promise.all([
                 currentUser.save(),
                 potentialFrnd.save(),
-                mail('New Friend Request', email, `Dear ${ username }, You have ${ friends_recieved.length } new Friend Requests.`)
+                mail('New Friend Request', email, `Dear ${ username }, You have ${ friends_received.length } new Friend Requests.`)
             ])
 
-            const recipientConnection = findConnection(frndID as string)
-            if (recipientConnection?.socketID)
-                res.socket.server.io.in(recipientConnection.socketID).emit('newRequest', `${ username } sent you a friend Request.`)
+            const recipientConnection = findConnection(frndID as string) 
+            if (recipientConnection?.socketID) {
+                res.socket.server.io.in(recipientConnection.socketID).emit('notify', `${ username } sent you a friend Request.`)
+                res.socket.server.io.in(recipientConnection.socketID).emit('newRequest', potentialFrnd)
+            }
 
             return raiseSuccess(res, { msg: 'Friend Request Sent.', data: null })
         } catch (error) {

@@ -29,6 +29,10 @@ body {
     line-height: 1.7;
 }
 
+main {
+    min-height: 80vh;
+}
+
 .cursor-pointer {
     cursor: pointer;
 }
@@ -50,6 +54,11 @@ body {
     -moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     -o-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
 }
 
 /* TABLET STYLES */

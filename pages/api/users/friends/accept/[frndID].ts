@@ -11,8 +11,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 
     if (method === 'PUT')
         try {
-            const currentUser = await Users.findById(userid).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
-            const potentialFrnd = await Users.findById(frndID).populate('friends_added.user friends_recieved.user friends_sent.user', 'email username')
+            const currentUser = await Users.findById(userid).populate('friends_added.user friends_received.user', 'email username')
+            const potentialFrnd = await Users.findById(frndID).populate('friends_added.user friends_sent.user', 'email username')
 
             if (!potentialFrnd)
                 return raiseNotFound(res, 'User does not Exist.')
@@ -20,9 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             currentUser.friends_added.push({ user: frndID })
             potentialFrnd.friends_added.push({ user: currentUser._id })
 
-            let sentEntry = currentUser.friends_recieved.findIndex((user: any) => JSON.stringify(user.user._id) === JSON.stringify(frndID))
+            let sentEntry = currentUser.friends_received.findIndex((user: any) => JSON.stringify(user.user._id) === JSON.stringify(frndID))
             if (sentEntry > -1)
-                currentUser.friends_recieved.splice(sentEntry, 1)
+                currentUser.friends_received.splice(sentEntry, 1)
 
             sentEntry = potentialFrnd.friends_sent.findIndex((user: any) => JSON.stringify(user.user._id) === JSON.stringify(currentUser._id))
             if (sentEntry > -1)
@@ -36,8 +36,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
             )
 
             const recipientConnection = findConnection(frndID as string)
-            if (recipientConnection?.socketID)
-                res.socket.server.io.in(recipientConnection.socketID).emit('requestAccepted', `${ currentUser.username } accepted your friend Request.`)
+            if (recipientConnection?.socketID) {
+                res.socket.server.io.in(recipientConnection.socketID).emit('notify', `${ currentUser.username } accepted your friend Request.`)
+                res.socket.server.io.in(recipientConnection.socketID).emit('requestAccepted', currentUser)
+            }
 
             return raiseSuccess(res, { msg: confirmMsg, data: null })
         } catch (error) {

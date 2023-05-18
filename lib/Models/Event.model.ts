@@ -3,7 +3,7 @@ import { models, model, Schema } from 'mongoose'
 const EventSchema: Schema = new Schema({
     start_date: { type: Date, required: true },
     end_date: { type: Date, required: true },
-    next_reminder: { type: Date, required: true, default: 0 },
+    next_reminder: { type: Date, required: false },
     title: { type: String, required: true },
     description: { type: String, required: false },
     repeat_status: { type: Number, required: true },

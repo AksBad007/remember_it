@@ -1,16 +1,18 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useContext } from 'react'
 import { toast } from 'react-toastify'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import Calendar from '@toast-ui/react-calendar'
 import { ISchedule } from 'tui-calendar'
 import SlimSelect from 'slim-select'
 import CalendarCreationModal from './custom/CalendarCreationModal'
-import { request, createSchedule } from '../Helpers/frontend_helpers'
+import { request, createSchedule, onNewEvt, onUpdateEvt } from '../Helpers/frontend_helpers'
+import { SocketContext } from '../Helpers/socket_helpers'
 import 'tui-calendar/dist/tui-calendar.css'
 import styles from '../../styles/Calendar.module.css'
 
 export default function CalendarComponent({ userInfo }: any) {
     const calendarRef = useRef<any>(null)
+    const socket = useContext(SocketContext)
     const [creationModal, setCreationModal] = useState(false)
     const [currentRange, setCurrentRange] = useState('')
     const [evtDates, setEvtDates] = useState({ start: new Date(), end: new Date() })
@@ -90,6 +92,8 @@ export default function CalendarComponent({ userInfo }: any) {
         setEvt(null)
     }
 
+    const handleDevEvt = useCallback((evtID: string) => genInstance().deleteSchedule(evtID, '1', false), [])
+
     useEffect(() => {
         const viewSelect = new SlimSelect({
             select: '#calendar-view',
@@ -99,15 +103,29 @@ export default function CalendarComponent({ userInfo }: any) {
 
         changeView('month')
 
-        // Destroy SlimSelects on Page Change
-        return () => viewSelect.destroy()
-    }, [changeView])
+        const handleNewEvt = (evt: any) => onNewEvt(evt, genInstance(), userInfo)
+        const handleEvtUpdate = (evt: any) => onUpdateEvt(evt, genInstance(), userInfo)
+
+        // On Screen Socket Events
+        socket.on('newEvt', handleNewEvt)
+        socket.on('evtUpdate', handleEvtUpdate)
+        socket.on('evtDel', handleDevEvt)
+
+        // Destroy SlimSelects and unbind Socket Events on Page Change
+        return () => {
+            viewSelect.destroy()
+
+            socket.off('newEvt', handleNewEvt)
+            socket.off('evtUpdate', handleEvtUpdate)
+            socket.off('evtDel', handleDevEvt)
+        }
+    }, [changeView, socket, userInfo, handleDevEvt])
 
     return (
         <>
             <section id={ styles['calendar-controls'] }>
                 <button onClick={getToday}> Today </button>
-                <div>
+                <div id={ styles['calendar-view-options-div'] }>
                     <select id='calendar-view'>
                         <option value='month'> Month </option>
                         <option value='day'> Day </option>
@@ -187,14 +205,14 @@ export default function CalendarComponent({ userInfo }: any) {
                         }
                     }}
                     onBeforeDeleteSchedule={async (evt) => {
-                        const evtID = evt.schedule.id
+                        const evtID = evt.schedule.id as string
 
                         if (window.confirm('Do you really want to delete this Event?'))
                             try {
                                 let res = await request('events/created/' + evtID, { method: 'DELETE' })
 
+                                handleDevEvt(evtID)
                                 toast.success(res.msg)
-                                genInstance().deleteSchedule(evtID, '1', false)
                             } catch (error: any) {
                                 toast.error(error.message)
                             }

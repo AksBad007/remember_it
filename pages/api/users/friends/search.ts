@@ -8,10 +8,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (method === 'GET')
         try {
-            let result = await searchUsers(userQuery, userid)
-            result = result.filter((user: any) => JSON.stringify(user._id) !== JSON.stringify(userid))
+            let result = await searchUsers(userQuery, userid as string, true)
 
-            return raiseSuccess(res, { msg: 'Friends Found', data: { result } })
+            return raiseSuccess(res, { msg: 'Friends Found.', data: { result } })
         } catch (error) {
             console.error(error)
 

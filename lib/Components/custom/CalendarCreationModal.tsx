@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
+import { toast } from 'react-toastify'
 import SlimSelect from 'slim-select'
 import DatePicker from 'react-datepicker'
 import Modal from '../UI/Modal'
-import { handleSubmit, post_or_put_data, createSchedule, getSelectValues } from '../../Helpers/frontend_helpers'
-import { toast } from 'react-toastify'
+import { handleSubmit, post_or_put_data, createSchedule, getSelectValues, onNewEvt, onUpdateEvt } from '../../Helpers/frontend_helpers'
 import 'react-datepicker/dist/react-datepicker.css'
 import styles from '../../../styles/Calendar.module.css'
 
@@ -24,6 +24,7 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
     const [evtStart, setEvtStart] = useState(evtDates.start)
     const [evtEnd, setEvtEnd] = useState(evtDates.end)
     const userList: any[] = userInfo.friends_added
+    const defaultUsers: string[] = evt ? evt.invited_users.filter((invited_user: any) => userList.find((user: any) => user.user._id === invited_user.user)).map((user: any) => user.user) : []
 
     const createEvtBody = (body: { [k: string]: FormDataEntryValue }) => {
         let newEvt: any = { ...body }
@@ -46,10 +47,11 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
             let res = await post_or_put_data('events', createEvtBody(handleSubmit(e)))
             const { data, msg } = res
 
-            calendarInstance.createSchedules([createSchedule(data, userInfo)])
+            onNewEvt(data, calendarInstance, userInfo)
             toast.success(msg)
             hideModal()
         } catch (error: any) {
+            console.error(error)
             toast.error(error.message)
         }
     }
@@ -60,7 +62,7 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
             const { data, msg } = res
 
             if (calendarInstance)
-                calendarInstance.updateSchedule(data._id, '1', createSchedule(data, userInfo), false)
+                onUpdateEvt(data, calendarInstance, userInfo)
             toast.success(msg)
             hideModal()
         } catch (error: any) {
@@ -91,133 +93,125 @@ export default function CalendarCreationModal ({ userInfo, calendarInstance, evt
         return () => evtSelects.forEach(select => select.destroy())
     }, [])
 
-    const body =
-        <form id={ styles['evt-form'] } onReset={ hideModal } onSubmit={evt ? updateEvent : createNewEvent}>
-            <div className='form-floating'>
-                <input
-                    type='text'
-                    name='title'
-                    className='form-control shadow-none'
-                    id='floatingInput'
-                    placeholder='Title*'
-                    defaultValue={evt ? evt.title : ''}
-                    required
-                />
-                <label htmlFor='floatingInput'> Title* </label>
-            </div>
-
-            <div className={ styles['evt-dates'] }>
-                <div className={ `${styles['evt-cust-labels']} cursor-default` }>
-                    <span> Starts At* </span>
+    return (
+        <Modal bg={show} title={ evt ? 'Update Event': 'Create New Event' }>
+            <form id={ styles['evt-form'] } onReset={ hideModal } onSubmit={evt ? updateEvent : createNewEvent}>
+                <div className='form-floating'>
+                    <input
+                        type='text'
+                        name='title'
+                        className='form-control shadow-none'
+                        id='floatingInput'
+                        placeholder='Title*'
+                        defaultValue={evt ? evt.title : ''}
+                        required
+                    />
+                    <label htmlFor='floatingInput'> Title* </label>
                 </div>
-                <DatePicker
-                    required
-                    showTimeSelect
-                    dateFormat='MMMM dd, yyyy hh:mm aa'
-                    placeholderText='Starts At*'
-                    name='start_date'
-                    selected={evtStart}
-                    onChange={(e: Date) => setEvtStart(e)}
-                />
-            </div>
 
-            <div className={ styles['evt-dates'] }>
-                <div className={ `${styles['evt-cust-labels']} cursor-default` }>
-                    <span> Ends At* </span>
-                </div>
-                <DatePicker
-                    required
-                    showTimeSelect
-                    dateFormat='MMMM dd, yyyy hh:mm aa'
-                    placeholderText='Ends At*'
-                    name='end_date'
-                    selected={evtEnd}
-                    minDate={evtStart}
-                    onChange={(e: Date) => setEvtEnd(e)}
-                />
-            </div>
-
-            <div>
-                <select id='evt-users' name='invited_users' multiple>
-                    <option data-placeholder='true' value=''> No Users Selected </option>
-                    {
-                        userList.map((user, idx) => (
-                            <option
-                                key={ idx }
-                                value={ user.user._id }
-                                selected={
-                                    evt &&
-                                    evt.invited_users.find((invited_user: any) => invited_user.user === user.user._id)
-                                }
-                            >
-                                { user.user.username }
-                            </option>
-                        ))
-                    }
-                </select>
-            </div>
-
-            <div>
-                <select id='evt-location' name='location_description' defaultValue={evt ? evt.location_description : ''} >
-                    <option data-placeholder='true' value='None'> Select Location </option>
-                    <option> None </option>
-                    <option> Online </option>
-                    {/* <option> Location </option> */}
-                </select>
-                {
-                    location === 'Online' &&
-                    <div className='form-floating mt-3'>
-                        <input
-                            type='text'
-                            className='form-control shadow-none'
-                            name='location_link'
-                            id='floatingInput'
-                            placeholder='Paste Link Here'
-                            defaultValue={evt ? evt.location_link : ''}
-                        />
-                        <label htmlFor='floatingInput'> Paste Link Here </label>
+                <div className={ styles['evt-dates'] }>
+                    <div className={ `${styles['evt-cust-labels']} cursor-default` }>
+                        <span> Starts At* </span>
                     </div>
-                }
-            </div>
+                    <DatePicker
+                        required
+                        showTimeSelect
+                        dateFormat='MMMM dd, yyyy hh:mm aa'
+                        placeholderText='Starts At*'
+                        name='start_date'
+                        selected={evtStart}
+                        onChange={(e: Date) => setEvtStart(e)}
+                    />
+                </div>
 
-            <div>
-                <select id='evt-recurrence' name='repeat_status' defaultValue={evt ? evt.repeat_status : '0'}>
-                    <option value='0'> Do Not Repeat </option>
-                    <option value='1'> Every Day </option>
-                    <option value='2'> Every Week </option>
-                    <option value='3'> Every Month </option>
-                    <option value='4'> Every Year </option>
-                </select>
-            </div>
+                <div className={ styles['evt-dates'] }>
+                    <div className={ `${styles['evt-cust-labels']} cursor-default` }>
+                        <span> Ends At* </span>
+                    </div>
+                    <DatePicker
+                        required
+                        showTimeSelect
+                        dateFormat='MMMM dd, yyyy hh:mm aa'
+                        placeholderText='Ends At*'
+                        name='end_date'
+                        selected={evtEnd}
+                        minDate={evtStart}
+                        onChange={(e: Date) => setEvtEnd(e)}
+                    />
+                </div>
 
-            <div>
-                <select id='evt-notify' name='notify' defaultValue={evt ? evt.notify : ''}>
-                    <option value='-1'> No Notifications </option>
-                    <option value='0'> At the Time of Event </option>
-                    <option value='300'> 5 Minutes Before </option>
-                    <option value='600'> 10 Minutes Before </option>
-                    <option value='900'> 15 Minutes Before </option>
-                </select>
-            </div>
+                <div>
+                    <select id='evt-users' name='invited_users' defaultValue={ defaultUsers } multiple>
+                        <option data-placeholder='true' value=''> No Users Selected </option>
+                        {
+                            userList.map((user, idx) => (
+                                <option key={ idx } value={ user.user._id }>{ user.user.username }</option>
+                            ))
+                        }
+                    </select>
+                </div>
 
-            <div className='form-floating'>
-                <textarea
-                    className='form-control'
-                    placeholder='Description'
-                    name='description'
-                    defaultValue={evt ? evt.description : ''}
-                    id='floatingTextarea'>
-                </textarea>
-                <label htmlFor='floatingTextarea'> Description </label>
-            </div>
+                <div>
+                    <select id='evt-location' name='location_description' defaultValue={evt ? evt.location_description : ''} >
+                        <option data-placeholder='true' value='None'> Select Location </option>
+                        <option> None </option>
+                        <option> Online </option>
+                        {/* <option> Location </option> */}
+                    </select>
+                    {
+                        location === 'Online' &&
+                        <div className='form-floating mt-3'>
+                            <input
+                                type='text'
+                                className='form-control shadow-none'
+                                name='location_link'
+                                id='floatingInput'
+                                placeholder='Paste Link Here'
+                                defaultValue={evt ? evt.location_link : ''}
+                            />
+                            <label htmlFor='floatingInput'> Paste Link Here </label>
+                        </div>
+                    }
+                </div>
 
-            <span id={ styles['evt-required-flag'] }> *Required </span>
+                <div>
+                    <select id='evt-recurrence' name='repeat_status' defaultValue={evt ? evt.repeat_status : '0'}>
+                        <option value='0'> Do Not Repeat </option>
+                        <option value='1'> Every Day </option>
+                        <option value='2'> Every Week </option>
+                        <option value='3'> Every Month </option>
+                        <option value='4'> Every Year </option>
+                    </select>
+                </div>
 
-            <div id={ styles['evt-btns'] }>
-                <button className='btn btn-primary' type='submit'> Submit </button>
-                <button className='btn btn-danger' type='reset'> Cancel </button>
-            </div>
-        </form>
+                <div>
+                    <select id='evt-notify' name='notify' defaultValue={evt ? evt.notify : ''}>
+                        <option value='-1'> No Notifications </option>
+                        <option value='0'> At the Time of Event </option>
+                        <option value='300'> 5 Minutes Before </option>
+                        <option value='600'> 10 Minutes Before </option>
+                        <option value='900'> 15 Minutes Before </option>
+                    </select>
+                </div>
 
-    return <Modal bg={show} title={ evt ? 'Update Event': 'Create New Event' } body={ body }/>
+                <div className='form-floating'>
+                    <textarea
+                        className='form-control'
+                        placeholder='Description'
+                        name='description'
+                        defaultValue={evt ? evt.description : ''}
+                        id='floatingTextarea'>
+                    </textarea>
+                    <label htmlFor='floatingTextarea'> Description </label>
+                </div>
+
+                <span id={ styles['evt-required-flag'] }> *Required </span>
+
+                <div id={ styles['evt-btns'] }>
+                    <button className='btn btn-primary' type='submit'> Submit </button>
+                    <button className='btn btn-danger' type='reset'> Cancel </button>
+                </div>
+            </form>
+        </Modal>
+    )
 }

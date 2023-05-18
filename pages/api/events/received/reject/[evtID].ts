@@ -4,18 +4,18 @@ import { findConnection, NextApiResponseServerIO } from '../../../../../lib/Help
 import { respond } from '../../../../../lib/Helpers/db_helpers'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
-  const { method, query: { evtID }, headers: { userid } } = req
+    const { method, query: { evtID }, headers: { userid } } = req
 
-  // Accept an Event Invite
-  if (method === 'PUT')
-    try {
-      const msg = await respond(evtID as string, userid as string, 'rejected')
+    // Accept an Event Invite
+    if (method === 'PUT')
+        try {
+            const msg = await respond(evtID as string, userid as string, 'rejected')
 
-      return raiseSuccess(res, { msg, data: null })
-    } catch (error: any) {
-      console.error(error)
+            return raiseSuccess(res, { msg, data: null })
+        } catch (error: any) {
+            console.error(error)
 
-      return raiseError(res)
-    }
-  return raiseNotFound(res)
+            return raiseError(res)
+        }
+    return raiseNotFound(res)
 }

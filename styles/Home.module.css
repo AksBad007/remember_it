@@ -1,37 +1,9 @@
-/* * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Reem Kufi", sans-serif !important;
-}
-
-img {
-    max-width: 100%;
-    height: auto;
-} */
-
 .App {
     min-height: 100vh;
     width: 85vw;
     max-width: 1900px;
     margin: 0rem auto;
 }
-
-/* body {
-    max-width: 100%;
-    overflow-x: hidden;
-}
-
-body {
-    background-color: #f6f6f6;
-}
-
-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 90px;
-} */
 
 .navbar-menu-container {
     display: none;
@@ -375,6 +347,12 @@ nav {
 }
 
 @media (max-width: 800px) {
+    .home-container img, .about-section-image-container img {
+        max-width: 100%;
+        height: auto;
+        transform: none;
+    }
+
     .nav-logo-container {
         max-width: 140px;
     }
@@ -391,8 +369,7 @@ nav {
         max-width: 450px;
     }
 
-    .home-banner-container,
-    .about-section-container {
+    .home-banner-container, .about-section-container {
         flex-direction: column-reverse;
         align-items: center;
         justify-content: center;
@@ -402,8 +379,7 @@ nav {
         flex-direction: column;
     }
 
-    .home-image-section,
-    .about-section-image-container {
+    .home-image-section, .about-section-image-container {
         width: 100%;
         max-width: 400px;
     }
@@ -418,8 +394,7 @@ nav {
         max-width: 80%;
     }
 
-    .home-text-section,
-    .about-section-text-container {
+    .home-text-section, .about-section-text-container {
         justify-content: center;
         align-items: center;
         margin-top: 4rem;

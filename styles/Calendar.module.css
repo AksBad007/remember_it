@@ -8,7 +8,6 @@
 
 #calendar-controls button {
     background-color: white;
-    padding: 0.5rem;
     color: #666;
     border: var(--slimselect-border);
     border-radius: 4px;
@@ -17,6 +16,10 @@
 
 #calendar-controls .ss-main, #calendar-controls .ss-content {
     width: 6rem;
+}
+
+#calendar-controls button, #calendar-view-options-div .ss-main {
+    padding: 0.5rem;
 }
 
 #current {

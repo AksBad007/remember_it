@@ -41,5 +41,8 @@
     "@types/node-schedule": "^2.1.0",
     "@types/nodemailer": "^6.4.7",
     "@types/react-datepicker": "^4.10.0"
+  },
+  "engines": {
+    "node": ">=16.14.2"
   }
 }
